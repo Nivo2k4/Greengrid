@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#052e1b"/>
+      <stop offset="100%" stop-color="#0f5132"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <g fill="#fff" font-family="Inter,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
+    <text x="80" y="220" font-size="84" font-weight="700">GreenGrid</text>
+    <text x="80" y="300" font-size="36" opacity="0.9">Smart Waste Management Platform</text>
+    <text x="80" y="360" font-size="28" opacity="0.8">Tracking · Scheduling · Reporting · Community</text>
+  </g>
+  <g transform="translate(940 90)">
+    <circle cx="100" cy="100" r="100" fill="#16a34a"/>
+    <path d="M100 60c-22 0-40 18-40 40s18 40 40 40 40-18 40-40-18-40-40-40zm0 18a22 22 0 1 1 0 44 22 22 0 0 1 0-44z" fill="#fff" opacity=".95"/>
+  </g>
+</svg>
