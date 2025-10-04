@@ -80,12 +80,13 @@ app.post('/api/auth/sync', async (req, res) => {
             name: name || '',
             phone: phone || '',
             photoURL: photoURL || '',
-            providerId,
+            providerId: providerId || '',  // ← FIXED: Add default empty string
             role: 'resident',
             status: 'active',
             lastLogin: new Date().toISOString(),
             updatedAt: new Date().toISOString()
         };
+
 
         if (userDoc.exists) {
             // Update existing user
