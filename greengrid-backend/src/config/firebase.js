@@ -1,22 +1,30 @@
 // src/config/firebase.js
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import admin from 'firebase-admin';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
-const firebaseConfig = {
-    apiKey: "AIzaSyARUy32W-OuWkK2xiJRnRsU4d3QCoV7d_E",
-    authDomain: "greengrid-project.firebaseapp.com",
-    projectId: "greengrid-project",
-    storageBucket: "greengrid-project.firebasestorage.app",
-    messagingSenderId: "695667687033",
-    appId: "1:695667687033:web:db7305811e1b9f9b4f9ea8",
-    measurementId: "G-C7FHPT48CT"
-};
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Read service account key
+const serviceAccount = JSON.parse(
+    readFileSync(
+        join(__dirname, '../../firebase-service-account.json'),
+        'utf8'
+    )
+);
 
-// Export Firebase services
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export default app;
+// Initialize Firebase Admin
+if (!admin.apps.length) {
+    admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+        projectId: process.env.FIREBASE_PROJECT_ID
+    });
+}
+
+// Export Firestore database
+export const db = admin.firestore();
+export const auth = admin.auth();
+
+console.log('🔥 Firebase initialized successfully!');
