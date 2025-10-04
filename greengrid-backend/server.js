@@ -36,20 +36,30 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+app.get('/api/test', (req, res) => {
+    res.json({
+        success: true,
+        message: 'Test endpoint working!',
+        timestamp: new Date().toISOString()
+    });
+});
+
+app.post('/api/test', (req, res) => {
+    console.log('📤 POST test request received:', req.body);
+    res.json({
+        success: true,
+        message: 'POST test endpoint working!',
+        data: req.body,
+        timestamp: new Date().toISOString()
+    });
+});
+
 app.post('/api/auth/sync', (req, res) => {
     console.log('📤 Auth sync request received:', req.body);
     res.json({
         success: true,
         message: 'User synchronized successfully',
         user: req.body,
-        timestamp: new Date().toISOString()
-    });
-});
-
-app.get('/api/test', (req, res) => {
-    res.json({
-        success: true,
-        message: 'Test endpoint working!',
         timestamp: new Date().toISOString()
     });
 });
@@ -147,6 +157,7 @@ app.use((req, res) => {
         availableRoutes: [
             'GET /api/health',
             'GET /api/test',
+            'POST /api/test',
             'POST /api/auth/sync',
             'GET /api/admin/dashboard',
             'GET /api/admin/users',
