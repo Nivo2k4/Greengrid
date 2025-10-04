@@ -20,7 +20,7 @@ const DashboardPage = React.lazy(() => import("./components/DashboardPage").then
 const ContactPage = React.lazy(() => import("./components/ContactPage").then(m => ({ default: m.ContactPage })));
 const EmergencyReportPage = React.lazy(() => import("./components/EmergencyReportPage").then(m => ({ default: m.EmergencyReportPage })));
 const CommunityHubPage = React.lazy(() => import("./components/CommunityHubPage").then(m => ({ default: m.CommunityHubPage })));
-const LoginPage = React.lazy(() => import('./components/LoginPage').then(module => ({ default: module.LoginPage })));
+const SimpleLogin = React.lazy(() => import('./components/SimpleLogin'));
 const RegisterPage = React.lazy(() => import('./components/RegisterPage').then(module => ({ default: module.RegisterPage })));
 const AdminPanel = React.lazy(() => import('./components/AdminPanel').then(module => ({ default: module.AdminPanel })));
 
@@ -38,7 +38,7 @@ const HomePage = React.memo(() => (
 HomePage.displayName = 'HomePage';
 
 // Simple Error Boundary
-class ErrorBoundary extends React.Component<React.PropsWithChildren<{}>, { hasError: boolean }>{
+class ErrorBoundary extends React.Component<React.PropsWithChildren<{}>, { hasError: boolean }> {
   state: { hasError: boolean } = { hasError: false };
   static getDerivedStateFromError() {
     return { hasError: true };
@@ -97,7 +97,7 @@ const AppContent = React.memo(() => {
       case 'emergency':
         return <EmergencyReportPage />;
       case 'login':
-        return <LoginPage />;
+        return <SimpleLogin />;
       case 'register':
         return <RegisterPage />;
       case 'home':
@@ -113,8 +113,8 @@ const AppContent = React.memo(() => {
     <div className="min-h-screen bg-background text-foreground antialiased overflow-x-hidden">
       {/* Skip to main content for accessibility */}
       {showNavigation && (
-        <a 
-          href="#main-content" 
+        <a
+          href="#main-content"
           className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-primary text-primary-foreground px-4 py-2 rounded-lg z-50"
         >
           Skip to main content
@@ -123,7 +123,7 @@ const AppContent = React.memo(() => {
 
       {showNavigation && <Navigation />}
       {showNavigation && <Breadcrumb />}
-      
+
       <main id="main-content" role="main">
         <ErrorBoundary>
           <Suspense fallback={<div className="p-6">Loading...</div>}>
@@ -134,9 +134,9 @@ const AppContent = React.memo(() => {
 
       {/* Only show footer on home page */}
       {currentRoute === 'home' && <Footer />}
-      
+
       {/* Toast notifications */}
-      <Toaster 
+      <Toaster
         position="bottom-right"
         className="toaster group"
         toastOptions={{
