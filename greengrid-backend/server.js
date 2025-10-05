@@ -256,7 +256,7 @@ app.get('/api/reports', async (req, res) => {
 app.post('/api/reports', async (req, res) => {
     try {
         console.log('📋 Create report request:', req.body);
-        const { title, type, description, location, priority, images } = req.body;
+        const { title, type, description, location, priority, images, imageUrls } = req.body;
 
         if (!title || !location) {
             return res.status(400).json({
@@ -274,7 +274,7 @@ app.post('/api/reports', async (req, res) => {
             status: 'open',
             reportedBy: 'Current User',
             reportedById: 'user123',
-            images: images || [],
+            images: imageUrls || images || [], // Support both field names
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
         };
@@ -313,7 +313,8 @@ app.post('/api/reports', async (req, res) => {
             data: {
                 reportId: docRef.id,
                 priority: priority,
-                type: type || 'general'
+                type: type || 'general',
+                hasImages: (imageUrls || images || []).length > 0
             },
             timestamp: new Date().toISOString()
         });
@@ -407,6 +408,7 @@ app.use((req, res) => {
             'GET /api/users/:id',
             'GET /api/reports',
             'POST /api/reports',
+            'POST /api/upload/images',
             'GET /api/admin/dashboard'
         ],
         timestamp: new Date().toISOString()
