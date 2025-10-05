@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
+// 🔔 Add notification interfaces
 interface Report {
     id: string;
     title: string;
@@ -26,17 +27,85 @@ interface BackendHealth {
     error?: string;
 }
 
+// 🔔 Simple Notification Service (built-in)
+class SimpleNotificationService {
+    static async requestPermission() {
+        if (!('Notification' in window)) {
+            console.log('❌ Browser notifications not supported');
+            return false;
+        }
+
+        if (Notification.permission === 'granted') {
+            return true;
+        }
+
+        const permission = await Notification.requestPermission();
+        return permission === 'granted';
+    }
+
+    static showNotification(title: string, options: NotificationOptions = {}) {
+        if (Notification.permission !== 'granted') {
+            console.log('❌ No notification permission');
+            return;
+        }
+
+        const notification = new Notification(title, {
+            icon: '/favicon.ico',
+            badge: '/favicon.ico',
+            ...options
+        });
+
+        // Auto close after 5 seconds
+        setTimeout(() => notification.close(), 5000);
+
+        // Handle click - focus window
+        notification.onclick = () => {
+            window.focus();
+            notification.close();
+        };
+
+        return notification;
+    }
+}
+
 export const RealTimeTest: React.FC = () => {
     const [reports, setReports] = useState<Report[]>([]);
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [backendHealth, setBackendHealth] = useState<BackendHealth | null>(null);
+    const [notificationEnabled, setNotificationEnabled] = useState<boolean>(false);
 
     // Load initial reports and check backend health
     useEffect(() => {
         checkBackendHealth();
         loadReports();
+        checkNotificationPermission();
     }, []);
+
+    const checkNotificationPermission = () => {
+        if ('Notification' in window) {
+            setNotificationEnabled(Notification.permission === 'granted');
+        }
+    };
+
+    const enableNotifications = async () => {
+        const granted = await SimpleNotificationService.requestPermission();
+        setNotificationEnabled(granted);
+
+        if (granted) {
+            SimpleNotificationService.showNotification(
+                '🎉 GreenGrid Notifications Enabled!',
+                { body: 'You will now receive alerts for important reports.' }
+            );
+        }
+    };
+
+    const testNotification = () => {
+        SimpleNotificationService.showNotification(
+            '🧪 Test Notification',
+            { body: 'This is a test notification from GreenGrid!' }
+        );
+    };
 
     const checkBackendHealth = async (): Promise<void> => {
         try {
@@ -64,7 +133,7 @@ export const RealTimeTest: React.FC = () => {
         }
     };
 
-    // Create test report
+    // Create test report with push notifications
     const createTestReport = async (): Promise<void> => {
         try {
             const priorities = ['low', 'medium', 'high', 'critical'];
@@ -87,11 +156,33 @@ export const RealTimeTest: React.FC = () => {
             const result = await response.json();
             if (result.success) {
                 console.log('✅ Test report created:', result.report);
+
+                // 🔔 SHOW PUSH NOTIFICATION
+                if (notificationEnabled) {
+                    const priorityEmojis = {
+                        'critical': '🚨',
+                        'high': '⚠️',
+                        'medium': '📋',
+                        'low': '📝'
+                    };
+
+                    const emoji = priorityEmojis[result.report.priority as keyof typeof priorityEmojis] || '📋';
+
+                    SimpleNotificationService.showNotification(
+                        `${emoji} New ${result.report.priority.toUpperCase()} Priority Report`,
+                        {
+                            body: `${result.report.title}\n📍 ${result.report.location}`,
+                            tag: `report-${result.report.id}`
+                        }
+                    );
+                }
+
                 setNotifications(prev => [...prev, {
                     id: Date.now(),
                     type: 'success',
-                    message: `📋 Created: ${result.report.title} (${result.report.priority})`
+                    message: `📋 Created: ${result.report.title} (${result.report.priority}) ${notificationEnabled ? '🔔' : ''}`
                 }]);
+
                 // Refresh reports list
                 await loadReports();
             }
@@ -154,6 +245,63 @@ export const RealTimeTest: React.FC = () => {
                 )}
             </div>
 
+            {/* 🔔 PUSH NOTIFICATIONS SECTION */}
+            <div style={{
+                marginBottom: '20px',
+                padding: '15px',
+                backgroundColor: notificationEnabled ? '#d4edda' : '#fff3cd',
+                border: `1px solid ${notificationEnabled ? '#c3e6cb' : '#ffeeba'}`,
+                borderRadius: '5px'
+            }}>
+                <h3 style={{ margin: '0 0 10px 0' }}>🔔 Push Notifications</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                    <p>
+                        <strong>Status:</strong>
+                        <span style={{
+                            color: notificationEnabled ? '#28a745' : '#856404',
+                            marginLeft: '5px',
+                            fontWeight: 'bold'
+                        }}>
+                            {notificationEnabled ? '✅ Enabled' : '⚠️ Disabled'}
+                        </span>
+                    </p>
+
+                    {!notificationEnabled && (
+                        <button
+                            onClick={enableNotifications}
+                            style={{
+                                padding: '8px 16px',
+                                backgroundColor: '#007bff',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '14px'
+                            }}
+                        >
+                            🔔 Enable Notifications
+                        </button>
+                    )}
+
+                    {notificationEnabled && (
+                        <button
+                            onClick={testNotification}
+                            style={{
+                                padding: '8px 16px',
+                                backgroundColor: '#28a745',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '14px'
+                            }}
+                        >
+                            🧪 Test Notification
+                        </button>
+                    )}
+                </div>
+            </div>
+
             {/* Controls */}
             <div style={{ marginBottom: '20px' }}>
                 <button
@@ -171,7 +319,7 @@ export const RealTimeTest: React.FC = () => {
                     onMouseOver={(e) => handleMouseOver(e, '#0056b3')}
                     onMouseOut={(e) => handleMouseOut(e, '#007bff')}
                 >
-                    🧪 Create Test Report
+                    🧪 Create Test Report {notificationEnabled ? '🔔' : ''}
                 </button>
 
                 <button
@@ -212,7 +360,8 @@ export const RealTimeTest: React.FC = () => {
                 </button>
             </div>
 
-            {/* Notifications */}
+            {/* Rest of your existing code stays the same... */}
+            {/* Notifications section */}
             <div style={{ marginBottom: '20px' }}>
                 <h2 style={{ color: '#2d5a27' }}>🔔 Live Notifications</h2>
                 <div style={{
