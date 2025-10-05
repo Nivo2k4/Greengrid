@@ -78,7 +78,7 @@ app.post('/api/test', (req, res) => {
 app.post('/api/auth/sync', async (req, res) => {
     try {
         console.log('📤 Auth sync request received:', req.body);
-        const { uid, email, name, phone, photoURL, providerId } = req.body;
+        const { uid, email, name, phone, photoURL, providerId, role, preferences } = req.body;
 
         if (!uid || !email) {
             return res.status(400).json({
@@ -98,10 +98,15 @@ app.post('/api/auth/sync', async (req, res) => {
             phone: phone || '',
             photoURL: photoURL || '',
             providerId: providerId || '',
-            role: 'resident',
+            role: role || 'resident',
             status: 'active',
             lastLogin: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
+            updatedAt: new Date().toISOString(),
+            preferences: preferences || {
+                emailNotifications: false,
+                smsNotifications: false,
+                communityUpdates: false
+            }
         };
 
         if (userDoc.exists) {

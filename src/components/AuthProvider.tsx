@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { isPredefindedLeader, validateLeaderCredentials, getLeaderByEmail } from '../data/communityLeaders';
+import { auth } from '../config/firebase';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 
 export interface User {
   id: string;
@@ -7,6 +9,7 @@ export interface User {
   email: string;
   role: 'resident' | 'community-leader';
   avatar?: string;
+  phone?: string;
   joinedAt: string;
 }
 
@@ -16,8 +19,8 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   register: (userData: RegisterData) => Promise<boolean>;
-  logout: () => void;
-  updateProfile: (updates: Partial<User>) => void;
+  logout: () => Promise<void>;
+  updateProfile: (updates: Partial<User>) => Promise<void>;
 }
 
 interface RegisterData {
@@ -25,6 +28,9 @@ interface RegisterData {
   email: string;
   password: string;
   role: 'resident' | 'community-leader';
+  emailNotifications?: boolean;
+  smsNotifications?: boolean;
+  communityUpdates?: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,119 +39,273 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize auth state from localStorage
+  // Initialize Firebase auth state listener
   useEffect(() => {
-    const initAuth = () => {
-      try {
-        const storedUser = localStorage.getItem('greengrid_user');
-        if (storedUser) {
-          const userData = JSON.parse(storedUser);
-          setUser(userData);
-        }
-      } catch (error) {
-        console.error('Error loading user data:', error);
-        localStorage.removeItem('greengrid_user');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+      setIsLoading(true);
 
-    initAuth();
+      if (firebaseUser) {
+        try {
+          // Sync user data with backend
+          const syncResponse = await fetch('http://localhost:5000/api/auth/sync', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              uid: firebaseUser.uid,
+              email: firebaseUser.email,
+              name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || '',
+              phone: firebaseUser.phoneNumber || '',
+              photoURL: firebaseUser.photoURL || '',
+              providerId: firebaseUser.providerId || 'firebase'
+            }),
+          });
+
+          if (syncResponse.ok) {
+            const syncData = await syncResponse.json();
+            const userData: User = {
+              id: firebaseUser.uid,
+              fullName: syncData.user.name || firebaseUser.displayName || firebaseUser.email?.split('@')[0] || '',
+              email: firebaseUser.email || '',
+              role: syncData.user.role || 'resident',
+              avatar: firebaseUser.photoURL || syncData.user.photoURL,
+              joinedAt: syncData.user.createdAt || new Date().toISOString()
+            };
+
+            setUser(userData);
+            localStorage.setItem('greengrid_user', JSON.stringify(userData));
+            console.log('✅ User authenticated and synced with backend:', userData);
+          } else {
+            throw new Error('Failed to sync user data');
+          }
+        } catch (error) {
+          console.error('❌ Error syncing user data:', error);
+          // Fallback to basic user data
+          const userData: User = {
+            id: firebaseUser.uid,
+            fullName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || '',
+            email: firebaseUser.email || '',
+            role: 'resident',
+            avatar: firebaseUser.photoURL || undefined,
+            joinedAt: new Date().toISOString()
+          };
+          setUser(userData);
+          localStorage.setItem('greengrid_user', JSON.stringify(userData));
+        }
+      } else {
+        setUser(null);
+        localStorage.removeItem('greengrid_user');
+      }
+
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
-    
+
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Check if this is a predefined community leader
+      console.log('🔐 Attempting Firebase login for:', email);
+
+      // Check if this is a predefined community leader first
       if (isPredefindedLeader(email)) {
         if (validateLeaderCredentials(email, password)) {
           const leaderData = getLeaderByEmail(email);
           if (leaderData) {
-            const leaderUser: User = {
-              id: `leader_${Date.now()}`,
-              fullName: leaderData.name,
-              email: leaderData.email,
-              role: 'community-leader',
-              avatar: leaderData.avatar,
-              joinedAt: leaderData.joinDate
-            };
-            
-            setUser(leaderUser);
-            localStorage.setItem('greengrid_user', JSON.stringify(leaderUser));
-            setIsLoading(false);
-            return true;
+            // For community leaders, create a Firebase user account if it doesn't exist
+            try {
+              // Try to sign in with Firebase first
+              await signInWithEmailAndPassword(auth, email, password);
+              console.log('✅ Community leader authenticated with Firebase');
+              return true;
+            } catch (firebaseError: any) {
+              if (firebaseError.code === 'auth/user-not-found') {
+                // Create Firebase account for community leader
+                try {
+                  await createUserWithEmailAndPassword(auth, email, password);
+                  console.log('✅ Community leader account created in Firebase');
+                  return true;
+                } catch (createError) {
+                  console.error('❌ Failed to create community leader account:', createError);
+                  return false;
+                }
+              } else {
+                console.error('❌ Firebase authentication error:', firebaseError);
+                return false;
+              }
+            }
           }
         }
         setIsLoading(false);
         return false;
       }
-      
-      // Regular user authentication
-      if (email && password.length >= 6) {
-        const mockUser: User = {
-          id: `user_${Date.now()}`,
-          fullName: email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-          email,
-          role: 'resident',
-          joinedAt: new Date().toISOString()
-        };
-        
-        setUser(mockUser);
-        localStorage.setItem('greengrid_user', JSON.stringify(mockUser));
-        setIsLoading(false);
+
+      // Regular user authentication with Firebase
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        console.log('✅ User authenticated with Firebase');
         return true;
+      } catch (firebaseError: any) {
+        console.error('❌ Firebase login error:', firebaseError);
+
+        // Provide user-friendly error messages
+        if (firebaseError.code === 'auth/user-not-found') {
+          throw new Error('No account found with this email address. Please register first.');
+        } else if (firebaseError.code === 'auth/wrong-password') {
+          throw new Error('Incorrect password. Please try again.');
+        } else if (firebaseError.code === 'auth/invalid-email') {
+          throw new Error('Invalid email address format.');
+        } else if (firebaseError.code === 'auth/too-many-requests') {
+          throw new Error('Too many failed attempts. Please try again later.');
+        } else {
+          throw new Error('Login failed. Please check your credentials and try again.');
+        }
       }
-      
+    } catch (error: any) {
+      console.error('❌ Login error:', error);
       setIsLoading(false);
-      return false;
-    } catch (error) {
-      console.error('Login error:', error);
-      setIsLoading(false);
-      return false;
+      throw error; // Re-throw to let the UI handle the error message
     }
   };
 
   const register = async (userData: RegisterData): Promise<boolean> => {
     setIsLoading(true);
-    
+
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1200));
-      
-      // Mock registration - in real app, this would be an API call
-      const newUser: User = {
-        id: `user_${Date.now()}`,
-        fullName: userData.fullName,
-        email: userData.email,
-        role: userData.role,
-        joinedAt: new Date().toISOString()
-      };
-      
-      setUser(newUser);
-      localStorage.setItem('greengrid_user', JSON.stringify(newUser));
+      console.log('📝 Attempting Firebase registration for:', userData.email);
+
+      // Create Firebase user account
+      const userCredential = await createUserWithEmailAndPassword(auth, userData.email, userData.password);
+      const firebaseUser = userCredential.user;
+
+      console.log('✅ User account created in Firebase:', firebaseUser.uid);
+
+      // Update the user's display name in Firebase
+      try {
+        // Use the updateProfile method from the user object
+        await (firebaseUser as any).updateProfile({
+          displayName: userData.fullName
+        });
+        console.log('✅ User profile updated in Firebase');
+      } catch (updateError) {
+        console.warn('⚠️ Could not update Firebase profile:', updateError);
+      }
+
+      // 🔥 MANUALLY SYNC WITH BACKEND IMMEDIATELY
+      try {
+        console.log('🔄 Syncing new user with backend...');
+        const syncResponse = await fetch('http://localhost:5000/api/auth/sync', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            name: userData.fullName,
+            phone: '',
+            photoURL: firebaseUser.photoURL || '',
+            providerId: 'firebase',
+            role: userData.role, // 🔥 IMPORTANT: Include the role from registration
+            preferences: {
+              emailNotifications: userData.emailNotifications || false,
+              smsNotifications: userData.smsNotifications || false,
+              communityUpdates: userData.communityUpdates || false
+            }
+          }),
+        });
+
+        if (syncResponse.ok) {
+          const syncData = await syncResponse.json();
+          console.log('✅ User synced with backend successfully:', syncData);
+
+          // Update local state immediately
+          const newUser: User = {
+            id: firebaseUser.uid,
+            fullName: userData.fullName,
+            email: firebaseUser.email || '',
+            role: userData.role,
+            avatar: firebaseUser.photoURL || undefined,
+            joinedAt: new Date().toISOString()
+          };
+
+          setUser(newUser);
+          localStorage.setItem('greengrid_user', JSON.stringify(newUser));
+        } else {
+          console.error('❌ Failed to sync with backend:', await syncResponse.text());
+        }
+      } catch (syncError) {
+        console.error('❌ Backend sync error:', syncError);
+        // Don't fail registration if sync fails, but log the error
+      }
+
       setIsLoading(false);
       return true;
-    } catch (error) {
-      console.error('Registration error:', error);
+    } catch (error: any) {
+      console.error('❌ Registration error:', error);
       setIsLoading(false);
-      return false;
+
+      // Provide user-friendly error messages
+      if (error.code === 'auth/email-already-in-use') {
+        throw new Error('An account with this email address already exists. Please try logging in instead.');
+      } else if (error.code === 'auth/weak-password') {
+        throw new Error('Password is too weak. Please choose a stronger password.');
+      } else if (error.code === 'auth/invalid-email') {
+        throw new Error('Invalid email address format.');
+      } else {
+        throw new Error('Registration failed. Please try again.');
+      }
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('greengrid_user');
+  const logout = async () => {
+    try {
+      console.log('🚪 Signing out user');
+      await signOut(auth);
+      // The onAuthStateChanged listener will handle clearing the user state
+    } catch (error) {
+      console.error('❌ Logout error:', error);
+      // Fallback: manually clear user state
+      setUser(null);
+      localStorage.removeItem('greengrid_user');
+    }
   };
 
-  const updateProfile = (updates: Partial<User>) => {
+  const updateProfile = async (updates: Partial<User>) => {
     if (user) {
-      const updatedUser = { ...user, ...updates };
-      setUser(updatedUser);
-      localStorage.setItem('greengrid_user', JSON.stringify(updatedUser));
+      try {
+        // Update local state
+        const updatedUser = { ...user, ...updates };
+        setUser(updatedUser);
+        localStorage.setItem('greengrid_user', JSON.stringify(updatedUser));
+
+        // Sync with backend
+        const syncResponse = await fetch('http://localhost:5000/api/auth/sync', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            uid: user.id,
+            email: updatedUser.email,
+            name: updatedUser.fullName,
+            phone: updatedUser.phone || '',
+            photoURL: updatedUser.avatar || '',
+            providerId: 'firebase'
+          }),
+        });
+
+        if (syncResponse.ok) {
+          console.log('✅ Profile updated and synced with backend');
+        } else {
+          console.error('❌ Failed to sync profile update with backend');
+        }
+      } catch (error) {
+        console.error('❌ Profile update error:', error);
+      }
     }
   };
 

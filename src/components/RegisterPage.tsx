@@ -18,7 +18,11 @@ const RegisterPage = React.memo(() => {
     password: '',
     confirmPassword: '',
     role: '',
-    agreeToTerms: false
+    agreeToTerms: false,
+    emailNotifications: true,
+    smsNotifications: false,
+    communityUpdates: true,
+    dataProcessing: false
   });
   const [error, setError] = useState('');
   const { navigate } = useRouter();
@@ -26,9 +30,9 @@ const RegisterPage = React.memo(() => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({ 
-      ...prev, 
-      [name]: type === 'checkbox' ? checked : value 
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
     }));
     if (error) setError(''); // Clear error when user starts typing
   };
@@ -41,7 +45,7 @@ const RegisterPage = React.memo(() => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
+
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match!');
       return;
@@ -50,26 +54,32 @@ const RegisterPage = React.memo(() => {
       setError('Please agree to the Terms & Conditions');
       return;
     }
+    if (!formData.dataProcessing) {
+      setError('Please consent to data processing');
+      return;
+    }
     if (!formData.role) {
       setError('Please select your role');
       return;
     }
-    
+
     try {
       const success = await register({
         fullName: formData.fullName,
         email: formData.email,
         password: formData.password,
-        role: formData.role as 'resident' | 'community-leader'
+        role: formData.role as 'resident' | 'community-leader',
+        emailNotifications: formData.emailNotifications,
+        smsNotifications: formData.smsNotifications,
+        communityUpdates: formData.communityUpdates
       });
-      
+
       if (success) {
         navigate('dashboard');
-      } else {
-        setError('Registration failed. Please try again.');
       }
-    } catch (error) {
-      setError('Registration failed. Please try again.');
+      // If register throws an error, it will be caught below
+    } catch (error: any) {
+      setError(error.message || 'Registration failed. Please try again.');
     }
   };
 
@@ -243,7 +253,7 @@ const RegisterPage = React.memo(() => {
                 <Checkbox
                   id="agreeToTerms"
                   checked={formData.agreeToTerms}
-                  onCheckedChange={(checked) => 
+                  onCheckedChange={(checked) =>
                     setFormData(prev => ({ ...prev, agreeToTerms: checked as boolean }))
                   }
                   className="mt-1 border-gray-300 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
@@ -266,6 +276,68 @@ const RegisterPage = React.memo(() => {
                     Privacy Policy
                   </button>
                 </Label>
+              </div>
+
+              {/* Data Processing Consent */}
+              <div className="flex items-start space-x-3">
+                <Checkbox
+                  id="dataProcessing"
+                  checked={formData.dataProcessing}
+                  onCheckedChange={(checked) =>
+                    setFormData(prev => ({ ...prev, dataProcessing: checked as boolean }))
+                  }
+                  className="mt-1 border-gray-300 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                />
+                <Label htmlFor="dataProcessing" className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                  🔒 I consent to the processing of my personal data for account management and service delivery *
+                </Label>
+              </div>
+
+              {/* Notification Preferences */}
+              <div className="space-y-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">📧 Notification Preferences</h4>
+
+                <div className="flex items-center space-x-3">
+                  <Checkbox
+                    id="emailNotifications"
+                    checked={formData.emailNotifications}
+                    onCheckedChange={(checked) =>
+                      setFormData(prev => ({ ...prev, emailNotifications: checked as boolean }))
+                    }
+                    className="border-gray-300 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                  />
+                  <Label htmlFor="emailNotifications" className="text-sm text-gray-600 dark:text-gray-400">
+                    📧 Receive email notifications about waste collection updates
+                  </Label>
+                </div>
+
+                <div className="flex items-center space-x-3">
+                  <Checkbox
+                    id="smsNotifications"
+                    checked={formData.smsNotifications}
+                    onCheckedChange={(checked) =>
+                      setFormData(prev => ({ ...prev, smsNotifications: checked as boolean }))
+                    }
+                    className="border-gray-300 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                  />
+                  <Label htmlFor="smsNotifications" className="text-sm text-gray-600 dark:text-gray-400">
+                    📱 Receive SMS notifications for urgent updates
+                  </Label>
+                </div>
+
+                <div className="flex items-center space-x-3">
+                  <Checkbox
+                    id="communityUpdates"
+                    checked={formData.communityUpdates}
+                    onCheckedChange={(checked) =>
+                      setFormData(prev => ({ ...prev, communityUpdates: checked as boolean }))
+                    }
+                    className="border-gray-300 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                  />
+                  <Label htmlFor="communityUpdates" className="text-sm text-gray-600 dark:text-gray-400">
+                    🌱 Receive community updates and sustainability tips
+                  </Label>
+                </div>
               </div>
 
               {/* Error Message */}
@@ -329,7 +401,7 @@ const RegisterPage = React.memo(() => {
                 </p>
               </div>
             ))}
-            
+
             <div className="pt-4 border-t border-green-500/30">
               <div className="text-center">
                 <div className="text-2xl font-bold text-white mb-1">10,000+</div>
