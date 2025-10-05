@@ -1,14 +1,30 @@
-// server.js - Firebase Integrated Version
+// server.js - Firebase Integrated Version with Real-time
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import helmet from 'helmet';
 import { db, auth } from './src/config/firebase.js';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Create HTTP server and Socket.io FIRST
+const server = createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: [
+            "http://localhost:3000",
+            "http://localhost:5173",
+            "http://localhost:5000"
+        ],
+        methods: ["GET", "POST"],
+        credentials: true
+    }
+});
 
 // Security middleware
 app.use(helmet());
@@ -31,11 +47,12 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/api/health', (req, res) => {
     res.json({
         success: true,
-        message: 'GreenGrid API is running with Firebase!',
+        message: 'GreenGrid API is running with Firebase & Real-time!',
         timestamp: new Date().toISOString(),
-        version: '2.0.0',
+        version: '3.0.0',
         environment: process.env.NODE_ENV || 'development',
-        database: 'Firebase Firestore'
+        database: 'Firebase Firestore',
+        realTime: 'Socket.io WebSocket enabled'
     });
 });
 
@@ -80,13 +97,12 @@ app.post('/api/auth/sync', async (req, res) => {
             name: name || '',
             phone: phone || '',
             photoURL: photoURL || '',
-            providerId: providerId || '',  // ← FIXED: Add default empty string
+            providerId: providerId || '',
             role: 'resident',
             status: 'active',
             lastLogin: new Date().toISOString(),
             updatedAt: new Date().toISOString()
         };
-
 
         if (userDoc.exists) {
             // Update existing user
@@ -257,7 +273,7 @@ app.post('/api/reports', async (req, res) => {
             priority: priority || 'medium',
             status: 'open',
             reportedBy: 'Current User',
-            reportedById: 'user123', // Replace with actual user ID from auth
+            reportedById: 'user123',
             images: images || [],
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
@@ -266,13 +282,47 @@ app.post('/api/reports', async (req, res) => {
         // Add to Firestore
         const docRef = await db.collection('reports').add(newReport);
 
+        const reportWithId = {
+            id: docRef.id,
+            ...newReport
+        };
+
+        // 🔥 REAL-TIME: Notify all connected clients
+        io.emit('newReport', {
+            type: 'NEW_REPORT',
+            data: reportWithId,
+            message: `New ${priority} priority report: ${title}`,
+            timestamp: new Date().toISOString()
+        });
+
+        // 🚨 URGENT ALERTS: Notify admins of high priority reports
+        if (priority === 'critical' || priority === 'high') {
+            io.to('admins').emit('urgentAlert', {
+                type: 'URGENT_REPORT',
+                data: reportWithId,
+                message: `🚨 URGENT: ${title} in ${location}`,
+                priority: priority,
+                timestamp: new Date().toISOString()
+            });
+        }
+
+        // 📊 DASHBOARD UPDATE: Update admin dashboard statistics
+        io.emit('dashboardUpdate', {
+            type: 'STATS_UPDATE',
+            action: 'REPORT_CREATED',
+            data: {
+                reportId: docRef.id,
+                priority: priority,
+                type: type || 'general'
+            },
+            timestamp: new Date().toISOString()
+        });
+
         res.json({
             success: true,
             message: 'Report created successfully',
-            report: {
-                id: docRef.id,
-                ...newReport
-            },
+            report: reportWithId,
+            realTimeNotified: true,
             timestamp: new Date().toISOString()
         });
 
@@ -322,6 +372,27 @@ app.get('/api/admin/dashboard', async (req, res) => {
     }
 });
 
+// ==================== SOCKET.IO CONNECTION HANDLING ====================
+io.on('connection', (socket) => {
+    console.log('🔌 User connected:', socket.id);
+
+    // Join admin room for admin-specific notifications
+    socket.on('joinAdmin', () => {
+        socket.join('admins');
+        console.log(`👨‍💼 Admin joined: ${socket.id}`);
+    });
+
+    // Join user room for user notifications
+    socket.on('joinUser', (userId) => {
+        socket.join(`user_${userId}`);
+        console.log(`👤 User ${userId} joined: ${socket.id}`);
+    });
+
+    socket.on('disconnect', () => {
+        console.log('🔌 User disconnected:', socket.id);
+    });
+});
+
 // ==================== 404 HANDLER ====================
 app.use((req, res) => {
     res.status(404).json({
@@ -354,11 +425,12 @@ app.use((err, req, res, next) => {
 });
 
 // ==================== START SERVER ====================
-app.listen(PORT, () => {
-    console.log('🚀 GreenGrid Backend with Firebase Started Successfully!');
+server.listen(PORT, () => {
+    console.log('🚀 GreenGrid Backend with Firebase & Real-time Started!');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log(`📡 Server URL: http://localhost:${PORT}`);
     console.log(`🔥 Database: Firebase Firestore`);
+    console.log(`🔌 Real-time: Socket.io WebSocket enabled`);
     console.log(`🏥 Health Check: http://localhost:${PORT}/api/health`);
     console.log(`🧪 Test: http://localhost:${PORT}/api/test`);
     console.log(`👥 Users: http://localhost:${PORT}/api/users`);

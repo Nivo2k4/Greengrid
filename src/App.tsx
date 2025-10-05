@@ -13,6 +13,7 @@ import { Footer } from "./components/Footer";
 import { Toaster } from "./components/ui/sonner";
 import { useEffect, Suspense } from "react";
 import React from "react";
+import { RealTimeTest } from './components/RealTimeTest';
 
 // Code-split heavy pages
 const TrackingPage = React.lazy(() => import("./components/TrackingPage").then(m => ({ default: m.TrackingPage })));
@@ -44,7 +45,6 @@ class ErrorBoundary extends React.Component<React.PropsWithChildren<{}>, { hasEr
     return { hasError: true };
   }
   componentDidCatch(error: unknown) {
-    // eslint-disable-next-line no-console
     console.error('App runtime error:', error);
   }
   render() {
@@ -66,13 +66,15 @@ const AppContent = React.memo(() => {
 
   useEffect(() => {
     // Set document meta information
-    const titles = {
+    const titles: Record<string, string> = {
       home: "GreenGrid - Smart Waste Management Platform",
       tracking: "Tracking Map & Schedule - GreenGrid",
       dashboard: "Community Dashboard - GreenGrid",
+      admin: "Admin Panel - GreenGrid",
       community: "Community Hub - GreenGrid",
       contact: "Feedback & Contact Us - GreenGrid",
       emergency: "Emergency Alert & Reporting - GreenGrid",
+      realtime: "Real-time Test - GreenGrid",
       login: "Login - GreenGrid Waste Management",
       register: "Register - GreenGrid Waste Management"
     };
@@ -90,12 +92,16 @@ const AppContent = React.memo(() => {
             <DashboardPage />
           </ProtectedRoute>
         );
+      case 'admin':
+        return <AdminPanel />;
       case 'community':
         return <CommunityHubPage />;
       case 'contact':
         return <ContactPage />;
       case 'emergency':
         return <EmergencyReportPage />;
+      case 'realtime':
+        return <RealTimeTest />;
       case 'login':
         return <SimpleLogin />;
       case 'register':

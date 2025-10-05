@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 
-type Route = 'home' | 'tracking' | 'dashboard' | 'community' | 'contact' | 'emergency' | 'login' | 'register';
+type Route = 'home' | 'tracking' | 'dashboard' | 'community' | 'contact' | 'emergency' | 'login' | 'register' | 'admin' | 'realtime';
 
 interface RouterContextType {
   currentRoute: Route;
@@ -19,7 +19,7 @@ export function RouterProvider({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     const parseHash = (): Route => {
       const hash = (window.location.hash || '').replace('#', '') as Route;
-      const allowed: Route[] = ['home', 'tracking', 'dashboard', 'community', 'contact', 'emergency', 'login', 'register'];
+      const allowed: Route[] = ['home', 'tracking', 'dashboard', 'community', 'contact', 'emergency', 'login', 'register', 'admin', 'realtime'];
       return allowed.includes(hash) ? hash : 'home';
     };
 
