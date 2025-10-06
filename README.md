@@ -288,3 +288,20 @@ For technical support or questions:
 ---
 
 **Built with ❤️ for a cleaner, greener future**
+
+## Authentication
+- Authentication is handled solely by Firebase Authentication (Email/Password and optional social providers).
+- Backend auth endpoints `/api/auth/login` and `/api/auth/admin-login` are disabled and return 410.
+- Roles and profiles are stored in Firestore under `users/{uid}` with fields like `role`, `fullName`, `joinedAt`.
+
+### Developer setup
+1. Enable Email/Password in Firebase Console → Authentication.
+2. Create test users in Firebase Auth or register via the app.
+3. Set user role in Firestore (`users/{uid}.role`) to `admin`, `community-leader`, or `resident`.
+4. App login/registration uses Firebase SDK. On login, the app reads role from Firestore and enforces route access.
+
+### Optional sync
+- You may call `/api/auth/sync` after login/registration to upsert profile fields in your backend/Firestore if needed.
+
+### Securing backend
+- Protect sensitive routes by validating Firebase ID tokens from `Authorization: Bearer <token>`.

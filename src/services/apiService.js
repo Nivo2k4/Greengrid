@@ -1,6 +1,18 @@
 // src/services/apiService.js
 const API_BASE = 'http://localhost:5000/api';
 
+async function getIdToken() {
+    try {
+        const { auth } = await import('../config/firebase');
+        // @ts-ignore
+        const current = auth.currentUser;
+        if (!current) return null;
+        return await current.getIdToken();
+    } catch {
+        return null;
+    }
+}
+
 export class ApiService {
 
     // Authentication
@@ -18,7 +30,7 @@ export class ApiService {
         }
     }
 
-    // Get all users
+    // Get all users (example public)
     static async getUsers() {
         try {
             const response = await fetch(`${API_BASE}/users`);
@@ -40,7 +52,7 @@ export class ApiService {
         }
     }
 
-    // Get all reports
+    // Get all reports (public GET)
     static async getReports(filters = {}) {
         try {
             const queryParams = new URLSearchParams();
@@ -58,12 +70,16 @@ export class ApiService {
         }
     }
 
-    // Create new report
+    // Create new report (protected)
     static async createReport(reportData) {
         try {
+            const token = await getIdToken();
             const response = await fetch(`${API_BASE}/reports`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {})
+                },
                 body: JSON.stringify(reportData)
             });
             return await response.json();
@@ -73,10 +89,15 @@ export class ApiService {
         }
     }
 
-    // Get admin dashboard data
+    // Get admin dashboard data (protected)
     static async getDashboard() {
         try {
-            const response = await fetch(`${API_BASE}/admin/dashboard`);
+            const token = await getIdToken();
+            const response = await fetch(`${API_BASE}/admin/dashboard`, {
+                headers: {
+                    ...(token ? { Authorization: `Bearer ${token}` } : {})
+                }
+            });
             return await response.json();
         } catch (error) {
             console.error('❌ Get dashboard error:', error);
@@ -84,7 +105,7 @@ export class ApiService {
         }
     }
 
-    // Health check
+    // Health check (public)
     static async healthCheck() {
         try {
             const response = await fetch(`${API_BASE}/health`);

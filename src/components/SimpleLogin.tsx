@@ -58,54 +58,8 @@ const SimpleLogin: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
-        if (!validateForm()) return;
-
-        setIsLoading(true);
-        setError(null);
-
-        try {
-            // Test backend connection first
-            console.log('🔐 Attempting login...');
-
-            // Use backend authentication
-            const response = await fetch('http://localhost:5000/api/auth/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData),
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                console.log('✅ Login successful:', data);
-                
-                // Store user data in localStorage
-                localStorage.setItem('greengrid_user', JSON.stringify(data.user));
-                
-                setSuccess(true);
-                
-                // Redirect based on user role
-                setTimeout(() => {
-                    if (data.user.role === 'community-leader') {
-                        window.location.hash = '#dashboard';
-                    } else if (data.user.role === 'admin') {
-                        window.location.hash = '#admin';
-                    } else {
-                        window.location.hash = '#home';
-                    }
-                }, 1500);
-            } else {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Invalid credentials');
-            }
-        } catch (err: any) {
-            console.error('❌ Login failed:', err);
-            setError({ message: err.message || 'Invalid email or password. Please try again.' });
-        } finally {
-            setIsLoading(false);
-        }
+        setError({ message: 'This login is disabled. Please use the Firebase login page.' });
+        return;
     };
 
     const handleTestBackend = async () => {

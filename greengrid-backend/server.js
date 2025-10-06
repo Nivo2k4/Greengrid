@@ -3,7 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import helmet from 'helmet';
-import { db, auth } from './src/config/firebase.js';
+import { db, auth, auth as adminAuth } from './src/config/firebase.js';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { upload } from './src/config/cloudinary.js';
@@ -219,99 +219,20 @@ app.delete('/api/upload/images/:publicId', async (req, res) => {
 });
 
 // ==================== AUTHENTICATION ROUTES ====================
-// Simple login route for testing
+// Simple login route for testing (DISABLED - use Firebase Auth)
 app.post('/api/auth/login', async (req, res) => {
-    try {
-        console.log('🔐 Login request received:', req.body);
-        const { email, password } = req.body;
-
-        if (!email || !password) {
-            return res.status(400).json({
-                success: false,
-                error: 'Email and password are required'
-            });
-        }
-
-        // Mock authentication for testing
-        const mockUsers = [
-            { email: 'zaid.nasheem@greengrid.com', password: 'admin1', role: 'admin' },
-            { email: 'mohamed.adnan@greengrid.com', password: 'leader456', role: 'community-leader' },
-            { email: 'ovin@greengrid.com', password: 'leader789', role: 'community-leader' },
-            { email: 'test@example.com', password: 'password123', role: 'resident' }
-        ];
-
-        const user = mockUsers.find(u => u.email === email && u.password === password);
-
-        if (user) {
-            res.json({
-                success: true,
-                message: 'Login successful',
-                user: {
-                    id: 'mock_' + Date.now(),
-                    email: user.email,
-                    role: user.role,
-                    name: user.email.split('@')[0],
-                    token: 'mock_token_' + Date.now()
-                },
-                timestamp: new Date().toISOString()
-            });
-        } else {
-            res.status(401).json({
-                success: false,
-                error: 'Invalid credentials'
-            });
-        }
-    } catch (error) {
-        console.error('❌ Login error:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Login failed'
-        });
-    }
+    return res.status(410).json({
+        success: false,
+        error: 'This endpoint is disabled. Use Firebase Authentication from the frontend.'
+    });
 });
 
-// Admin-only login endpoint
+// Admin-only login endpoint (DISABLED - use Firebase Auth)
 app.post('/api/auth/admin-login', async (req, res) => {
-    try {
-        console.log('🔐 Admin login request received:', req.body);
-        const { email, password } = req.body;
-
-        if (!email || !password) {
-            return res.status(400).json({
-                success: false,
-                error: 'Email and password are required'
-            });
-        }
-
-        // Only allow admin role
-        const user = mockUsers.find(u => u.email === email && u.password === password && u.role === 'admin');
-
-        if (user) {
-            res.json({
-                success: true,
-                message: 'Admin login successful',
-                user: {
-                    id: 'mock_' + Date.now(),
-                    email: user.email,
-                    role: user.role,
-                    name: user.email.split('@')[0],
-                    token: 'mock_token_' + Date.now()
-                },
-                timestamp: new Date().toISOString()
-            });
-        } else {
-            res.status(401).json({
-                success: false,
-                error: 'Invalid admin credentials'
-            });
-        }
-    } catch (error) {
-        console.error('❌ Admin login error:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Admin login failed'
-        });
-    }
+    return res.status(410).json({
+        success: false,
+        error: 'This endpoint is disabled. Use Firebase Authentication from the frontend.'
+    });
 });
 
 app.post('/api/auth/sync', async (req, res) => {
@@ -412,6 +333,36 @@ app.post('/api/auth/sync', async (req, res) => {
             message: error.message
         });
     }
+});
+
+// ==================== AUTH MIDDLEWARE (Firebase ID Token) ====================
+async function verifyFirebaseToken(req, res, next) {
+    try {
+        const authHeader = req.headers.authorization || '';
+        const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+        if (!token) {
+            return res.status(401).json({ success: false, error: 'Missing Authorization bearer token' });
+        }
+        if (!adminAuth) {
+            console.warn('⚠️ Firebase admin not initialized; skipping token verification in development');
+            return next();
+        }
+        const decoded = await adminAuth.verifyIdToken(token);
+        req.firebaseUser = decoded;
+        return next();
+    } catch (err) {
+        console.error('❌ Invalid Firebase token:', err.message);
+        return res.status(401).json({ success: false, error: 'Invalid token' });
+    }
+}
+
+// Protect sensitive routes
+app.use('/api/admin', verifyFirebaseToken);
+// You may also protect report mutations if present
+app.use('/api/reports', (req, res, next) => {
+    // Allow GET public listing, protect others
+    if (req.method === 'GET') return next();
+    return verifyFirebaseToken(req, res, next);
 });
 
 // ==================== ENHANCED REPORTS ROUTES ====================
