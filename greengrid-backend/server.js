@@ -234,7 +234,7 @@ app.post('/api/auth/login', async (req, res) => {
 
         // Mock authentication for testing
         const mockUsers = [
-            { email: 'zaid.nasheem@greengrid.com', password: '123', role: 'admin' },
+            { email: 'zaid.nasheem@greengrid.com', password: 'admin1', role: 'admin' },
             { email: 'mohamed.adnan@greengrid.com', password: 'leader456', role: 'community-leader' },
             { email: 'ovin@greengrid.com', password: 'leader789', role: 'community-leader' },
             { email: 'test@example.com', password: 'password123', role: 'resident' }
@@ -266,6 +266,50 @@ app.post('/api/auth/login', async (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Login failed'
+        });
+    }
+});
+
+// Admin-only login endpoint
+app.post('/api/auth/admin-login', async (req, res) => {
+    try {
+        console.log('🔐 Admin login request received:', req.body);
+        const { email, password } = req.body;
+
+        if (!email || !password) {
+            return res.status(400).json({
+                success: false,
+                error: 'Email and password are required'
+            });
+        }
+
+        // Only allow admin role
+        const user = mockUsers.find(u => u.email === email && u.password === password && u.role === 'admin');
+
+        if (user) {
+            res.json({
+                success: true,
+                message: 'Admin login successful',
+                user: {
+                    id: 'mock_' + Date.now(),
+                    email: user.email,
+                    role: user.role,
+                    name: user.email.split('@')[0],
+                    token: 'mock_token_' + Date.now()
+                },
+                timestamp: new Date().toISOString()
+            });
+        } else {
+            res.status(401).json({
+                success: false,
+                error: 'Invalid admin credentials'
+            });
+        }
+    } catch (error) {
+        console.error('❌ Admin login error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Admin login failed'
         });
     }
 });

@@ -34,6 +34,7 @@ import {
   MoreHorizontal
 } from 'lucide-react';
 import { useAuth } from './AuthProvider';
+import { useRouter } from './RouterProvider';
 import { toast } from 'sonner';
 
 interface DashboardData {
@@ -75,16 +76,16 @@ interface Report {
 }
 
 export const AdminPanel: React.FC = () => {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
+  const { navigate } = useRouter();
+  // All hooks must be called before any return
   const [activeTab, setActiveTab] = useState('dashboard');
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [recentReports, setRecentReports] = useState<Report[]>([]);
   const [allReports, setAllReports] = useState<Report[]>([]);
   const [filteredReports, setFilteredReports] = useState<Report[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isDashboardLoading, setIsDashboardLoading] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<string>('Never');
-
-  // Enhanced filtering and search
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
@@ -92,9 +93,24 @@ export const AdminPanel: React.FC = () => {
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
-
-  // Only allow community leaders and admins to access admin panel
-  if (!user || (user.role !== 'community-leader' && user.role !== 'admin')) {
+  // All useEffect hooks must also be before any return
+  useEffect(() => {
+    if (!isLoading && !user) {
+      navigate('login');
+    }
+  }, [isLoading, user, navigate]);
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
+  if (!user) {
+    return null;
+  }
+  if (user.role !== 'community-leader' && user.role !== 'admin') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <Card className="w-full max-w-md">
@@ -105,7 +121,7 @@ export const AdminPanel: React.FC = () => {
               You need admin privileges to access this panel.
             </p>
             <Button
-              onClick={() => window.location.hash = '#login'}
+              onClick={() => navigate('login')}
               className="mt-4"
             >
               Go to Login
@@ -118,7 +134,7 @@ export const AdminPanel: React.FC = () => {
 
   // 🔥 LOAD REAL-TIME DATA FROM YOUR BACKEND
   const loadDashboardData = async () => {
-    setIsLoading(true);
+    setIsDashboardLoading(true);
     try {
       const response = await fetch('http://localhost:5000/api/admin/dashboard');
       const result = await response.json();
@@ -130,7 +146,7 @@ export const AdminPanel: React.FC = () => {
     } catch (error) {
       console.error('❌ Failed to load dashboard data:', error);
     } finally {
-      setIsLoading(false);
+      setIsDashboardLoading(false);
       setLastUpdate(new Date().toLocaleString());
     }
   };
@@ -320,10 +336,10 @@ export const AdminPanel: React.FC = () => {
                 }}
                 variant="outline"
                 size="sm"
-                disabled={isLoading}
+                disabled={isDashboardLoading}
               >
-                <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-                {isLoading ? 'Refreshing...' : 'Refresh'}
+                <RefreshCw className={`w-4 h-4 mr-2 ${isDashboardLoading ? 'animate-spin' : ''}`} />
+                {isDashboardLoading ? 'Refreshing...' : 'Refresh'}
               </Button>
             </div>
           </div>

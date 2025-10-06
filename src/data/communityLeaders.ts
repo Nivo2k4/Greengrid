@@ -14,20 +14,10 @@ export interface CommunityLeader {
 
 // In-memory storage for community leaders (in production, this would be a database)
 let communityLeadersData: CommunityLeader[] = [
-  {
-    name: "Zaid Nasheem",
-    email: "zaid.nasheem@greengrid.com",
-    password: "123",
-    role: "Admin",
-    phone: "+94 77 123 4567",
-    location: "Srilanka",
-    bio: "System administrator and community leader focused on sustainable waste management and environmental initiatives.",
-    joinDate: "2023-01-15",
-    avatar: "ZA"
-  },
+  // Removed admin user to allow backend-only admin login
   {
     name: "Mohamed Adnan",
-    email: "mohamed.adnan@greengrid.com", 
+    email: "mohamed.adnan@greengrid.com",
     password: "leader456",
     role: "Sustainability Director",
     phone: "+94 77 123 4567",
@@ -39,7 +29,7 @@ let communityLeadersData: CommunityLeader[] = [
   {
     name: "Ovin Gunasekara",
     email: "ovin@greengrid.com",
-    password: "leader789", 
+    password: "leader789",
     role: "Education Outreach Lead",
     phone: "+94 77 123 4567",
     location: "Srilanka",

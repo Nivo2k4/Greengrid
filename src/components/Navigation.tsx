@@ -69,10 +69,15 @@ const Navigation = React.memo(() => {
     }
   }, [navigate]);
 
+  const handleLogout = async () => {
+    await logout();
+    navigate('login');
+  };
+
   return (
     <nav className={`sticky top-0 z-50 w-full transition-all duration-300 ${scrolled
-        ? 'bg-background/80 backdrop-blur-xl shadow-lg border-b border-border'
-        : 'bg-background/95 backdrop-blur-sm border-b border-border/50'
+      ? 'bg-background/80 backdrop-blur-xl shadow-lg border-b border-border'
+      : 'bg-background/95 backdrop-blur-sm border-b border-border/50'
       }`}>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
@@ -99,9 +104,9 @@ const Navigation = React.memo(() => {
                   <button
                     onClick={() => handleNavigation(item.route)}
                     className={`px-3 py-2 text-sm font-medium transition-all duration-200 relative flex items-center space-x-1 rounded-lg hover:bg-accent/50 ${(currentRoute === item.route ||
-                        (item.dropdown && item.dropdown.some(d => d.route === currentRoute)))
-                        ? 'text-primary bg-accent/30'
-                        : 'text-muted-foreground hover:text-foreground'
+                      (item.dropdown && item.dropdown.some(d => d.route === currentRoute)))
+                      ? 'text-primary bg-accent/30'
+                      : 'text-muted-foreground hover:text-foreground'
                       }`}
                     onMouseEnter={() => item.dropdown && setActiveDropdown(item.name)}
                     onMouseLeave={() => item.dropdown && setActiveDropdown(null)}
@@ -129,8 +134,8 @@ const Navigation = React.memo(() => {
                           key={dropdownItem.name}
                           onClick={() => handleNavigation(dropdownItem.route)}
                           className={`block w-full text-left px-4 py-2 text-sm transition-colors duration-150 rounded-lg mx-2 ${dropdownItem.route === 'emergency'
-                              ? 'text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20'
-                              : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+                            ? 'text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
                             }`}
                         >
                           {dropdownItem.route === 'emergency' && (
@@ -182,7 +187,7 @@ const Navigation = React.memo(() => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={logout}
+                  onClick={handleLogout}
                   className="text-muted-foreground hover:text-foreground hover:bg-accent/50"
                 >
                   <LogOut className="w-4 h-4 mr-2" />
@@ -252,9 +257,9 @@ const Navigation = React.memo(() => {
                 <button
                   onClick={() => handleNavigation(item.route)}
                   className={`block w-full text-left px-3 py-2 rounded-lg text-base font-medium transition-colors duration-200 ${(currentRoute === item.route ||
-                      (item.dropdown && item.dropdown.some(d => d.route === currentRoute)))
-                      ? 'text-primary bg-accent'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+                    (item.dropdown && item.dropdown.some(d => d.route === currentRoute)))
+                    ? 'text-primary bg-accent'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
                     }`}
                 >
                   {item.name}
@@ -267,10 +272,10 @@ const Navigation = React.memo(() => {
                         key={dropdownItem.name}
                         onClick={() => handleNavigation(dropdownItem.route)}
                         className={`block w-full text-left px-3 py-2 rounded-lg text-sm transition-colors duration-200 ${dropdownItem.route === 'emergency'
-                            ? 'text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20'
-                            : currentRoute === dropdownItem.route
-                              ? 'text-primary bg-accent/50'
-                              : 'text-muted-foreground hover:text-foreground hover:bg-accent/30'
+                          ? 'text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20'
+                          : currentRoute === dropdownItem.route
+                            ? 'text-primary bg-accent/50'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-accent/30'
                           }`}
                       >
                         {dropdownItem.route === 'emergency' && (
@@ -309,10 +314,7 @@ const Navigation = React.memo(() => {
                     <Button
                       variant="ghost"
                       className="w-full justify-start text-muted-foreground hover:text-foreground"
-                      onClick={async () => {
-                        await logout();
-                        setIsOpen(false);
-                      }}
+                      onClick={handleLogout}
                     >
                       <LogOut className="w-4 h-4 mr-2" />
                       Logout

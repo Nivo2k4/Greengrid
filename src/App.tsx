@@ -21,9 +21,9 @@ const DashboardPage = React.lazy(() => import("./components/DashboardPage").then
 const ContactPage = React.lazy(() => import("./components/ContactPage").then(m => ({ default: m.ContactPage })));
 const EmergencyReportPage = React.lazy(() => import("./components/EmergencyReportPage").then(m => ({ default: m.EmergencyReportPage })));
 const CommunityHubPage = React.lazy(() => import("./components/CommunityHubPage").then(m => ({ default: m.CommunityHubPage })));
-const SimpleLogin = React.lazy(() => import('./components/SimpleLogin'));
 const RegisterPage = React.lazy(() => import('./components/RegisterPage').then(module => ({ default: module.RegisterPage })));
 const AdminPanel = React.lazy(() => import('./components/AdminPanel').then(module => ({ default: module.AdminPanel })));
+const LoginPage = React.lazy(() => import('./components/LoginPage').then(module => ({ default: module.default })));
 
 // Home Page Component
 const HomePage = React.memo(() => (
@@ -103,7 +103,7 @@ const AppContent = React.memo(() => {
       case 'realtime':
         return <RealTimeTest />;
       case 'login':
-        return <SimpleLogin />;
+        return <LoginPage />;
       case 'register':
         return <RegisterPage />;
       case 'home':
