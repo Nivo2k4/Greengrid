@@ -68,7 +68,7 @@ const SimpleLogin: React.FC = () => {
             // Test backend connection first
             console.log('🔐 Attempting login...');
 
-            // Simulate API call (replace with actual login endpoint)
+            // Use backend authentication
             const response = await fetch('http://localhost:5000/api/auth/login', {
                 method: 'POST',
                 headers: {
@@ -80,17 +80,29 @@ const SimpleLogin: React.FC = () => {
             if (response.ok) {
                 const data = await response.json();
                 console.log('✅ Login successful:', data);
+                
+                // Store user data in localStorage
+                localStorage.setItem('greengrid_user', JSON.stringify(data.user));
+                
                 setSuccess(true);
-                // Redirect to dashboard after successful login
+                
+                // Redirect based on user role
                 setTimeout(() => {
-                    window.location.hash = '#dashboard';
+                    if (data.user.role === 'community-leader') {
+                        window.location.hash = '#dashboard';
+                    } else if (data.user.role === 'admin') {
+                        window.location.hash = '#admin';
+                    } else {
+                        window.location.hash = '#home';
+                    }
                 }, 1500);
             } else {
-                throw new Error('Invalid credentials');
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Invalid credentials');
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error('❌ Login failed:', err);
-            setError({ message: 'Invalid email or password. Please try again.' });
+            setError({ message: err.message || 'Invalid email or password. Please try again.' });
         } finally {
             setIsLoading(false);
         }

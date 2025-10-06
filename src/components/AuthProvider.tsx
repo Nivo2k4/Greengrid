@@ -39,69 +39,89 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize Firebase auth state listener
+  // Initialize auth state from localStorage and backend
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+    const initializeAuth = async () => {
       setIsLoading(true);
+      
+      try {
+        // Check if user is stored in localStorage (from backend login)
+        const storedUser = localStorage.getItem('greengrid_user');
+        if (storedUser) {
+          const userData = JSON.parse(storedUser);
+          setUser(userData);
+          console.log('✅ User loaded from localStorage:', userData);
+        } else {
+          // Try Firebase auth as fallback
+          const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+            if (firebaseUser) {
+              try {
+                // Sync user data with backend
+                const syncResponse = await fetch('http://localhost:5000/api/auth/sync', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    uid: firebaseUser.uid,
+                    email: firebaseUser.email,
+                    name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || '',
+                    phone: firebaseUser.phoneNumber || '',
+                    photoURL: firebaseUser.photoURL || '',
+                    providerId: firebaseUser.providerId || 'firebase'
+                  }),
+                });
 
-      if (firebaseUser) {
-        try {
-          // Sync user data with backend
-          const syncResponse = await fetch('http://localhost:5000/api/auth/sync', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              uid: firebaseUser.uid,
-              email: firebaseUser.email,
-              name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || '',
-              phone: firebaseUser.phoneNumber || '',
-              photoURL: firebaseUser.photoURL || '',
-              providerId: firebaseUser.providerId || 'firebase'
-            }),
+                if (syncResponse.ok) {
+                  const syncData = await syncResponse.json();
+                  const userData: User = {
+                    id: firebaseUser.uid,
+                    fullName: syncData.user.name || firebaseUser.displayName || firebaseUser.email?.split('@')[0] || '',
+                    email: firebaseUser.email || '',
+                    role: syncData.user.role || 'resident',
+                    avatar: firebaseUser.photoURL || syncData.user.photoURL,
+                    joinedAt: syncData.user.createdAt || new Date().toISOString()
+                  };
+
+                  setUser(userData);
+                  localStorage.setItem('greengrid_user', JSON.stringify(userData));
+                  console.log('✅ User authenticated and synced with backend:', userData);
+                } else {
+                  throw new Error('Failed to sync user data');
+                }
+              } catch (error) {
+                console.error('❌ Error syncing user data:', error);
+                // Fallback to basic user data
+                const userData: User = {
+                  id: firebaseUser.uid,
+                  fullName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || '',
+                  email: firebaseUser.email || '',
+                  role: 'resident',
+                  avatar: firebaseUser.photoURL || undefined,
+                  joinedAt: new Date().toISOString()
+                };
+                setUser(userData);
+                localStorage.setItem('greengrid_user', JSON.stringify(userData));
+              }
+            } else {
+              setUser(null);
+              localStorage.removeItem('greengrid_user');
+            }
+            setIsLoading(false);
           });
 
-          if (syncResponse.ok) {
-            const syncData = await syncResponse.json();
-            const userData: User = {
-              id: firebaseUser.uid,
-              fullName: syncData.user.name || firebaseUser.displayName || firebaseUser.email?.split('@')[0] || '',
-              email: firebaseUser.email || '',
-              role: syncData.user.role || 'resident',
-              avatar: firebaseUser.photoURL || syncData.user.photoURL,
-              joinedAt: syncData.user.createdAt || new Date().toISOString()
-            };
-
-            setUser(userData);
-            localStorage.setItem('greengrid_user', JSON.stringify(userData));
-            console.log('✅ User authenticated and synced with backend:', userData);
-          } else {
-            throw new Error('Failed to sync user data');
-          }
-        } catch (error) {
-          console.error('❌ Error syncing user data:', error);
-          // Fallback to basic user data
-          const userData: User = {
-            id: firebaseUser.uid,
-            fullName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || '',
-            email: firebaseUser.email || '',
-            role: 'resident',
-            avatar: firebaseUser.photoURL || undefined,
-            joinedAt: new Date().toISOString()
-          };
-          setUser(userData);
-          localStorage.setItem('greengrid_user', JSON.stringify(userData));
+          return () => unsubscribe();
         }
-      } else {
+      } catch (error) {
+        console.error('❌ Auth initialization error:', error);
         setUser(null);
         localStorage.removeItem('greengrid_user');
       }
-
+      
       setIsLoading(false);
-    });
+    };
 
-    return () => unsubscribe();
+    initializeAuth();
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
@@ -264,8 +284,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     try {
       console.log('🚪 Signing out user');
-      await signOut(auth);
-      // The onAuthStateChanged listener will handle clearing the user state
+      
+      // Clear localStorage first
+      localStorage.removeItem('greengrid_user');
+      setUser(null);
+      
+      // Try Firebase logout if available
+      try {
+        await signOut(auth);
+      } catch (firebaseError) {
+        console.warn('⚠️ Firebase logout failed, but user is logged out locally');
+      }
+      
+      console.log('✅ User logged out successfully');
     } catch (error) {
       console.error('❌ Logout error:', error);
       // Fallback: manually clear user state

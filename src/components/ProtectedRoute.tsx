@@ -101,7 +101,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
-  // Check role-based access
+  // Check role-based access - Only allow community leaders for dashboard
   if (user && allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 dark:from-red-950 dark:via-orange-950 dark:to-yellow-950 flex items-center justify-center p-4">
@@ -116,7 +116,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
               Access Restricted
             </CardTitle>
             <p className="text-gray-600 dark:text-gray-400 text-sm">
-              Your current role doesn't have permission to access this area
+              Community Dashboard is only available to Community Leaders
             </p>
           </CardHeader>
 
@@ -127,9 +127,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
                   <strong>Current Role:</strong> {user.role === 'resident' ? 'Resident' : 'Community Leader'}
                 </p>
                 <p className="text-sm text-red-600 dark:text-red-400">
-                  <strong>Required:</strong> {allowedRoles.map(role => 
-                    role === 'resident' ? 'Resident' : 'Community Leader'
-                  ).join(' or ')}
+                  <strong>Required:</strong> Community Leader Access
+                </p>
+                <p className="text-xs text-red-500 dark:text-red-400 mt-2">
+                  Only verified community leaders can access the dashboard with sensitive community data and management tools.
                 </p>
               </div>
             </div>

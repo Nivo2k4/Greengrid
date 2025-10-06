@@ -127,19 +127,48 @@ const ContactPage = React.memo(() => {
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      toast.success('Thank you for your feedback! We\'ll get back to you soon.');
-      
-      // Reset form
-      setFormData({
-        fullName: '',
-        email: '',
-        message: '',
-        rating: 0
+      // Submit feedback to backend
+      const feedbackData = {
+        title: `Feedback from ${formData.fullName}`,
+        type: 'feedback',
+        description: formData.message,
+        location: 'Contact Form',
+        priority: formData.rating >= 4 ? 'low' : formData.rating >= 3 ? 'medium' : 'high',
+        images: [],
+        imageUrls: [],
+        reportedBy: formData.fullName,
+        reportedById: 'feedback_user',
+        contactInfo: {
+          name: formData.fullName,
+          email: formData.email,
+          phone: '',
+          rating: formData.rating
+        }
+      };
+
+      const response = await fetch('http://localhost:5000/api/reports', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(feedbackData),
       });
+
+      if (response.ok) {
+        toast.success('Thank you for your feedback! We\'ll get back to you soon.');
+        
+        // Reset form
+        setFormData({
+          fullName: '',
+          email: '',
+          message: '',
+          rating: 0
+        });
+      } else {
+        throw new Error('Failed to submit feedback');
+      }
     } catch (error) {
+      console.error('Feedback submission error:', error);
       toast.error('Something went wrong. Please try again.');
     } finally {
       setIsSubmitting(false);

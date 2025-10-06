@@ -195,29 +195,77 @@ const EmergencyReportPage = React.memo(() => {
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Generate report ID
-      const newReportId = `EMR-${Date.now().toString().slice(-6)}`;
-      setReportId(newReportId);
-      setShowConfirmation(true);
-      
-      // Reset form
-      setFormData({
-        issueType: '',
-        location: '',
-        description: '',
-        priority: '',
-        contactName: '',
-        contactPhone: '',
-        photos: []
+      // Upload images first if any
+      let imageUrls = [];
+      if (formData.photos.length > 0) {
+        const formDataToUpload = new FormData();
+        formData.photos.forEach((photo, index) => {
+          formDataToUpload.append('images', photo);
+        });
+
+        const uploadResponse = await fetch('http://localhost:5000/api/upload/images', {
+          method: 'POST',
+          body: formDataToUpload,
+        });
+
+        if (uploadResponse.ok) {
+          const uploadData = await uploadResponse.json();
+          imageUrls = uploadData.images || [];
+        }
+      }
+
+      // Submit the report
+      const reportData = {
+        title: `${formData.issueType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())} - ${formData.location}`,
+        type: 'emergency',
+        description: formData.description,
+        location: formData.location,
+        priority: formData.priority,
+        images: imageUrls,
+        imageUrls: imageUrls,
+        reportedBy: formData.contactName,
+        reportedById: 'current_user',
+        contactInfo: {
+          name: formData.contactName,
+          phone: formData.contactPhone,
+          email: 'user@example.com'
+        }
+      };
+
+      const response = await fetch('http://localhost:5000/api/reports', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(reportData),
       });
-      
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+
+      if (response.ok) {
+        const result = await response.json();
+        const newReportId = result.report?.id || `EMR-${Date.now().toString().slice(-6)}`;
+        setReportId(newReportId);
+        setShowConfirmation(true);
+        toast.success('Emergency report submitted successfully!');
+        
+        // Reset form
+        setFormData({
+          issueType: '',
+          location: '',
+          description: '',
+          priority: '',
+          contactName: '',
+          contactPhone: '',
+          photos: []
+        });
+        
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      } else {
+        throw new Error('Failed to submit report');
       }
     } catch (error) {
+      console.error('Emergency report submission error:', error);
       toast.error('Failed to submit report. Please try again.');
     } finally {
       setIsSubmitting(false);
