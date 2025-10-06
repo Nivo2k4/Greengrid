@@ -577,4 +577,4 @@ const DashboardPage = React.memo(() => {
 
 DashboardPage.displayName = 'DashboardPage';
 
-export { DashboardPage };
+export default DashboardPage;

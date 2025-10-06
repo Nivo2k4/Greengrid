@@ -658,4 +658,4 @@ const EmergencyReportPage = React.memo(() => {
 
 EmergencyReportPage.displayName = 'EmergencyReportPage';
 
-export { EmergencyReportPage };
+export default EmergencyReportPage;

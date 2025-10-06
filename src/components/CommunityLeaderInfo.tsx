@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Mail, Calendar, Users, Award } from 'lucide-react';
-import { COMMUNITY_LEADERS } from '../data/communityLeaders';
+
 
 const CommunityLeaderInfo = React.memo(() => {
   return (

@@ -1,16 +1,19 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { auth, db } from '../config/firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { auth, db } from "../config/firebase"; // Make sure these are exported in your firebase.js
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  User as FirebaseUser,
+} from "firebase/auth";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 
-export interface User {
-  id: string;
-  fullName: string;
+interface User {
+  uid: string;
   email: string;
-  role: 'resident' | 'community-leader' | 'admin';
-  avatar?: string;
-  phone?: string;
-  joinedAt: string;
+  fullName?: string;
+  role?: string;
 }
 
 interface AuthContextType {
@@ -19,51 +22,33 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   register: (userData: RegisterData) => Promise<boolean>;
-  logout: () => Promise<void>;
-  updateProfile: (updates: Partial<User>) => Promise<void>;
+  logout: () => void;
 }
 
 interface RegisterData {
-  fullName: string;
   email: string;
   password: string;
-  role: 'resident' | 'community-leader' | 'admin';
-  emailNotifications?: boolean;
-  smsNotifications?: boolean;
-  communityUpdates?: boolean;
+  fullName?: string;
+  role?: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize auth state from Firebase
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
-      setIsLoading(true);
       if (firebaseUser) {
-        // Fetch user role from Firestore
-        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-        let role: 'resident' | 'community-leader' | 'admin' = 'resident';
-        let fullName = firebaseUser.displayName || firebaseUser.email?.split('@')[0] || '';
-        let joinedAt = new Date().toISOString();
-        if (userDoc.exists()) {
-          const data = userDoc.data();
-          role = data.role || 'resident';
-          fullName = data.fullName || fullName;
-          joinedAt = data.joinedAt || joinedAt;
-        }
-        const userData: User = {
-          id: firebaseUser.uid,
-          fullName,
-          email: firebaseUser.email || '',
-          role,
-          avatar: firebaseUser.photoURL || undefined,
-          joinedAt,
-        };
-        setUser(userData);
+        // Fetch profile data from Firestore
+        const profileDoc = await getDoc(doc(db, "users", firebaseUser.uid));
+        const profileData = profileDoc.exists() ? profileDoc.data() : {};
+        setUser({
+          uid: firebaseUser.uid,
+          email: firebaseUser.email || "",
+          ...profileData,
+        });
       } else {
         setUser(null);
       }
@@ -75,73 +60,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      // onAuthStateChanged will handle setting user
+      await signInWithEmailAndPassword(auth, email, password);
       setIsLoading(false);
       return true;
-    } catch (error) {
+    } catch (error: any) {
       setIsLoading(false);
-      throw error;
+      throw new Error(error.message);
     }
   };
 
   const register = async (userData: RegisterData): Promise<boolean> => {
     setIsLoading(true);
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, userData.email, userData.password);
-      const firebaseUser = userCredential.user;
-      // Save user profile to Firestore
-      await setDoc(doc(db, 'users', firebaseUser.uid), {
-        fullName: userData.fullName,
+      const res = await createUserWithEmailAndPassword(auth, userData.email, userData.password);
+      // Create profile in Firestore
+      await setDoc(doc(db, "users", res.user.uid), {
+        fullName: userData.fullName || "",
         email: userData.email,
-        role: userData.role,
-        joinedAt: new Date().toISOString(),
-        emailNotifications: userData.emailNotifications || false,
-        smsNotifications: userData.smsNotifications || false,
-        communityUpdates: userData.communityUpdates || false,
+        role: userData.role || "resident",
+        createdAt: new Date().toISOString(),
       });
-      // Optionally update Firebase display name
-      if (firebaseUser.displayName !== userData.fullName) {
-        await (firebaseUser as any).updateProfile({ displayName: userData.fullName });
-      }
       setIsLoading(false);
       return true;
-    } catch (error) {
+    } catch (error: any) {
       setIsLoading(false);
-      throw error;
+      throw new Error(error.message);
     }
   };
 
   const logout = async () => {
     setIsLoading(true);
-    try {
-      await signOut(auth);
-      setUser(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const updateProfile = async (updates: Partial<User>) => {
-    if (user) {
-      const userRef = doc(db, 'users', user.id);
-      await setDoc(userRef, { ...updates }, { merge: true });
-      setUser({ ...user, ...updates });
-    }
-  };
-
-  const value: AuthContextType = {
-    user,
-    isAuthenticated: !!user,
-    isLoading,
-    login,
-    register,
-    logout,
-    updateProfile
+    await signOut(auth);
+    setUser(null);
+    setIsLoading(false);
   };
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated: !!user,
+        isLoading,
+        login,
+        register,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -150,7 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }

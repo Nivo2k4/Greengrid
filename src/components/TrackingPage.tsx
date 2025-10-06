@@ -622,4 +622,4 @@ const TrackingPage = React.memo(() => {
 
 TrackingPage.displayName = 'TrackingPage';
 
-export { TrackingPage };
+export default TrackingPage;
