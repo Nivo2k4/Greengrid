@@ -1,18 +1,20 @@
-// server.js - Enhanced Firebase + Real-time + Image Upload Version
+// server.js - Enhanced Supabase/Prisma + Real-time + Image Upload Version
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import helmet from 'helmet';
-import { db, auth, auth as adminAuth } from './src/config/firebase.js';
+import { PrismaClient } from '@prisma/client';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { upload } from './src/config/cloudinary.js';
 import cloudinary from './src/config/cloudinary.js';
+import { registerUser, loginUser, getUserProfile, authenticateJWT } from './src/controllers/authController.js';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const prisma = new PrismaClient();
 
 // Create HTTP server and Socket.io
 const server = createServer(app);
@@ -51,65 +53,24 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/api/health', (req, res) => {
     res.json({
         success: true,
-        message: 'GreenGrid API is running with Firebase, Real-time & AI!',
+        message: 'GreenGrid API is running with Supabase/Prisma & Real-time!',
         timestamp: new Date().toISOString(),
-        version: '4.0.0',
+        version: '5.0.0',
         environment: process.env.NODE_ENV || 'development',
-        database: 'Firebase Firestore',
+        database: 'Supabase PostgreSQL with Prisma',
         realTime: 'Socket.io WebSocket enabled',
-        imageUpload: 'Cloudinary + AI Analysis enabled',
+        imageUpload: 'Cloudinary enabled',
+        authentication: 'JWT-based authentication',
         features: [
-            'User Authentication',
+            'JWT User Authentication',
             'Real-time Reports',
-            'AI Image Analysis',
+            'Image Upload & Storage',
             'Push Notifications',
-            'Admin Dashboard'
+            'Admin Dashboard',
+            'Prisma ORM'
         ]
     });
 });
-
-// ==================== AI ANALYSIS SERVICE ====================
-class AIAnalysisService {
-    constructor() {
-        this.openaiApiKey = process.env.OPENAI_API_KEY;
-    }
-
-    // Mock AI analysis (replace with real OpenAI later)
-    async analyzeWasteImage(imageUrl) {
-        console.log('🤖 Analyzing image:', imageUrl);
-
-        // Simulate processing time
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
-        const wasteTypes = ['plastic', 'organic', 'metal', 'glass', 'hazardous', 'mixed'];
-        const severities = ['low', 'medium', 'high', 'critical'];
-        const volumes = ['small', 'medium', 'large', 'massive'];
-        const actions = [
-            'Schedule regular pickup within 24 hours',
-            'Immediate collection required - health hazard',
-            'Sort and recycle appropriate materials',
-            'Special disposal needed - contact hazmat team',
-            'Community cleanup initiative recommended'
-        ];
-
-        const wasteType = wasteTypes[Math.floor(Math.random() * wasteTypes.length)];
-        const severity = severities[Math.floor(Math.random() * severities.length)];
-
-        return {
-            wasteType,
-            severityLevel: severity,
-            environmentalImpact: Math.floor(Math.random() * 8) + 2, // 2-10
-            recommendedAction: actions[Math.floor(Math.random() * actions.length)],
-            estimatedVolume: volumes[Math.floor(Math.random() * volumes.length)],
-            confidence: Math.floor(Math.random() * 30) + 70, // 70-100%
-            tags: [wasteType, severity, 'community-reported'],
-            aiGenerated: true,
-            analyzedAt: new Date().toISOString()
-        };
-    }
-}
-
-const aiService = new AIAnalysisService();
 
 // ==================== IMAGE UPLOAD ROUTES ====================
 app.post('/api/upload/images', upload.array('images', 5), async (req, res) => {
@@ -129,15 +90,6 @@ app.post('/api/upload/images', upload.array('images', 5), async (req, res) => {
             try {
                 console.log('☁️ Image uploaded to Cloudinary:', file.path);
 
-                // 🤖 AI Analysis
-                let analysis = null;
-                try {
-                    analysis = await aiService.analyzeWasteImage(file.path);
-                    console.log('🧠 AI analysis completed:', analysis);
-                } catch (aiError) {
-                    console.warn('⚠️ AI analysis failed, using defaults:', aiError.message);
-                }
-
                 uploadedImages.push({
                     url: file.path,
                     publicId: file.filename,
@@ -145,7 +97,6 @@ app.post('/api/upload/images', upload.array('images', 5), async (req, res) => {
                     height: file.height || 600,
                     size: file.size,
                     format: file.format,
-                    analysis: analysis,
                     uploadedAt: new Date().toISOString()
                 });
 
@@ -162,22 +113,21 @@ app.post('/api/upload/images', upload.array('images', 5), async (req, res) => {
             });
         }
 
-        // 🔥 REAL-TIME: Notify about image analysis completion
-        io.emit('imageAnalysisComplete', {
-            type: 'IMAGE_ANALYSIS_COMPLETE',
+        // 🔥 REAL-TIME: Notify about image upload completion
+        io.emit('imageUploadComplete', {
+            type: 'IMAGE_UPLOAD_COMPLETE',
             data: {
                 imageCount: uploadedImages.length,
-                analyses: uploadedImages.map(img => img.analysis)
+                images: uploadedImages
             },
             timestamp: new Date().toISOString()
         });
 
         res.json({
             success: true,
-            message: `Successfully uploaded and analyzed ${uploadedImages.length} image(s)`,
+            message: `Successfully uploaded ${uploadedImages.length} image(s)`,
             images: uploadedImages,
-            count: uploadedImages.length,
-            aiAnalysisEnabled: true
+            count: uploadedImages.length
         });
 
     } catch (error) {
@@ -218,155 +168,21 @@ app.delete('/api/upload/images/:publicId', async (req, res) => {
     }
 });
 
-// ==================== AUTHENTICATION ROUTES ====================
-// Simple login route for testing (DISABLED - use Firebase Auth)
-app.post('/api/auth/login', async (req, res) => {
-    return res.status(410).json({
-        success: false,
-        error: 'This endpoint is disabled. Use Firebase Authentication from the frontend.'
-    });
-});
+// ==================== AUTHENTICATION ROUTES (JWT/Prisma) ====================
+app.post('/api/auth/register', registerUser);
+app.post('/api/auth/login', loginUser);
+app.get('/api/auth/profile', authenticateJWT, getUserProfile);
 
-// Admin-only login endpoint (DISABLED - use Firebase Auth)
-app.post('/api/auth/admin-login', async (req, res) => {
-    return res.status(410).json({
-        success: false,
-        error: 'This endpoint is disabled. Use Firebase Authentication from the frontend.'
-    });
-});
-
+// Legacy routes (now removed - use JWT auth above)
 app.post('/api/auth/sync', async (req, res) => {
-    try {
-        console.log('📤 Auth sync request received:', req.body);
-        const { uid, email, name, phone, photoURL, providerId, role, preferences } = req.body;
-
-        if (!uid || !email) {
-            return res.status(400).json({
-                success: false,
-                error: 'UID and email are required'
-            });
-        }
-
-        // Check if Firebase is available
-        if (!db) {
-            console.warn('⚠️ Firebase not available, using mock response');
-            return res.json({
-                success: true,
-                message: 'User synchronized successfully (mock mode)',
-                user: {
-                    uid,
-                    email,
-                    name: name || '',
-                    phone: phone || '',
-                    photoURL: photoURL || '',
-                    providerId: providerId || '',
-                    role: role || 'resident',
-                    status: 'active',
-                    lastLogin: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
-                },
-                timestamp: new Date().toISOString()
-            });
-        }
-
-        const userRef = db.collection('users').doc(uid);
-        const userDoc = await userRef.get();
-
-        const userData = {
-            uid,
-            email,
-            name: name || '',
-            phone: phone || '',
-            photoURL: photoURL || '',
-            providerId: providerId || '',
-            role: role || 'resident',
-            status: 'active',
-            lastLogin: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            preferences: preferences || {
-                emailNotifications: false,
-                smsNotifications: false,
-                communityUpdates: false,
-                pushNotifications: true
-            }
-        };
-
-        if (userDoc.exists) {
-            await userRef.update(userData);
-            console.log(`✅ User ${email} updated in Firestore`);
-        } else {
-            userData.createdAt = new Date().toISOString();
-            userData.profile = {
-                address: '',
-                communityId: '',
-                reportsCreated: 0,
-                joinedAt: new Date().toISOString()
-            };
-            await userRef.set(userData);
-            console.log(`✅ New user ${email} created in Firestore`);
-
-            // 🔥 REAL-TIME: Notify admins of new user
-            io.to('admins').emit('newUserRegistered', {
-                type: 'NEW_USER_REGISTERED',
-                data: {
-                    userId: uid,
-                    email: email,
-                    name: name,
-                    role: role
-                },
-                timestamp: new Date().toISOString()
-            });
-        }
-
-        res.json({
-            success: true,
-            message: 'User synchronized successfully',
-            user: userData,
-            timestamp: new Date().toISOString()
-        });
-
-    } catch (error) {
-        console.error('❌ Auth sync error:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to synchronize user data',
-            message: error.message
-        });
-    }
+    return res.status(410).json({
+        success: false,
+        error: 'This endpoint is deprecated. Use /api/auth/register and /api/auth/login instead.'
+    });
 });
 
-// ==================== AUTH MIDDLEWARE (Firebase ID Token) ====================
-async function verifyFirebaseToken(req, res, next) {
-    try {
-        const authHeader = req.headers.authorization || '';
-        const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
-        if (!token) {
-            return res.status(401).json({ success: false, error: 'Missing Authorization bearer token' });
-        }
-        if (!adminAuth) {
-            console.warn('⚠️ Firebase admin not initialized; skipping token verification in development');
-            return next();
-        }
-        const decoded = await adminAuth.verifyIdToken(token);
-        req.firebaseUser = decoded;
-        return next();
-    } catch (err) {
-        console.error('❌ Invalid Firebase token:', err.message);
-        return res.status(401).json({ success: false, error: 'Invalid token' });
-    }
-}
-
-// Protect sensitive routes
-app.use('/api/admin', verifyFirebaseToken);
-// You may also protect report mutations if present
-app.use('/api/reports', (req, res, next) => {
-    // Allow GET public listing, protect others
-    if (req.method === 'GET') return next();
-    return verifyFirebaseToken(req, res, next);
-});
-
-// ==================== ENHANCED REPORTS ROUTES ====================
-app.post('/api/reports', async (req, res) => {
+// ==================== REPORTS ROUTES (Prisma-based) ====================
+app.post('/api/reports', authenticateJWT, async (req, res) => {
     try {
         console.log('📋 Create report request:', req.body);
         const {
@@ -377,10 +193,10 @@ app.post('/api/reports', async (req, res) => {
             priority,
             images,
             imageUrls,
-            reportedBy,
-            reportedById,
             contactInfo
         } = req.body;
+
+        const { userId } = req.user; // From JWT
 
         if (!title || !location) {
             return res.status(400).json({
@@ -389,137 +205,51 @@ app.post('/api/reports', async (req, res) => {
             });
         }
 
-        // Check if Firebase is available
-        if (!db) {
-            console.warn('⚠️ Firebase not available, using mock response');
-            const mockReport = {
-                id: 'mock_' + Date.now(),
+        const reportImages = imageUrls || images || [];
+
+        // Create report using Prisma
+        const newReport = await prisma.report.create({
+            data: {
                 title,
                 type: type || 'general',
                 description: description || '',
                 location,
                 priority: priority || 'medium',
                 status: 'open',
-                reportedBy: reportedBy || 'Current User',
-                reportedById: reportedById || 'user123',
+                reportedById: userId,
                 contactInfo: contactInfo || {},
-                images: imageUrls || images || [],
-                aiAnalyzed: false,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            };
-
-            // 🔥 REAL-TIME: Notify about mock report
-            io.emit('newReport', {
-                type: 'NEW_REPORT',
-                data: mockReport,
-                message: `New ${priority || 'medium'} priority report: ${title}`,
-                timestamp: new Date().toISOString()
-            });
-
-            return res.json({
-                success: true,
-                message: 'Report created successfully (mock mode)',
-                report: mockReport,
-                realTimeNotified: true,
-                aiEnhanced: false,
-                timestamp: new Date().toISOString()
-            });
-        }
-
-        const reportImages = imageUrls || images || [];
-
-        // Calculate auto-priority based on AI analysis if images exist
-        let autoPriority = priority || 'medium';
-        if (reportImages.length > 0) {
-            // Check if any image analysis suggests higher priority
-            const hasHighPriorityAnalysis = reportImages.some(img =>
-                img.analysis && ['critical', 'high'].includes(img.analysis.severityLevel)
-            );
-            if (hasHighPriorityAnalysis) {
-                autoPriority = 'high';
+                images: reportImages,
+                createdAt: new Date(),
+                updatedAt: new Date()
             }
-        }
+        });
 
-        const newReport = {
-            title,
-            type: type || 'general',
-            description: description || '',
-            location,
-            priority: autoPriority,
-            status: 'open',
-            reportedBy: reportedBy || 'Current User',
-            reportedById: reportedById || 'user123',
-            contactInfo: contactInfo || {},
-            images: reportImages,
-            aiAnalyzed: reportImages.some(img => img.analysis),
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            metadata: {
-                source: 'web-app',
-                version: '4.0.0',
-                hasImages: reportImages.length > 0,
-                imageCount: reportImages.length
-            }
-        };
-
-        // Save to Firebase Firestore
-        console.log('💾 Saving report to Firebase:', newReport);
-        let docRef;
-        let reportWithId;
-
-        try {
-            docRef = await db.collection('reports').add(newReport);
-            reportWithId = { id: docRef.id, ...newReport };
-            console.log('✅ Report saved to Firebase with ID:', docRef.id);
-            console.log('📄 Report data:', reportWithId);
-        } catch (firebaseError) {
-            console.error('❌ Firebase save error:', firebaseError);
-            // Still return success but with a mock ID
-            reportWithId = { id: 'firebase_error_' + Date.now(), ...newReport };
-            console.log('⚠️ Using fallback ID:', reportWithId.id);
-        }
+        console.log('✅ Report saved with Prisma:', newReport.id);
 
         // 🔥 REAL-TIME NOTIFICATIONS
         io.emit('newReport', {
             type: 'NEW_REPORT',
-            data: reportWithId,
-            message: `New ${autoPriority} priority report: ${title}`,
+            data: newReport,
+            message: `New ${priority || 'medium'} priority report: ${title}`,
             timestamp: new Date().toISOString()
         });
 
         // 🚨 URGENT ALERTS
-        if (autoPriority === 'critical' || autoPriority === 'high') {
+        if (priority === 'critical' || priority === 'high') {
             io.to('admins').emit('urgentAlert', {
                 type: 'URGENT_REPORT',
-                data: reportWithId,
+                data: newReport,
                 message: `🚨 URGENT: ${title} in ${location}`,
-                priority: autoPriority,
-                hasAIAnalysis: reportImages.some(img => img.analysis),
+                priority: priority,
                 timestamp: new Date().toISOString()
             });
         }
 
-        // 📊 DASHBOARD UPDATE
-        io.emit('dashboardUpdate', {
-            type: 'STATS_UPDATE',
-            action: 'REPORT_CREATED',
-            data: {
-                reportId: docRef.id,
-                priority: autoPriority,
-                type: type || 'general',
-                hasImages: reportImages.length > 0,
-                aiAnalyzed: reportImages.some(img => img.analysis)
-            },
-            timestamp: new Date().toISOString()
-        });
-
         res.json({
             success: true,
             message: 'Report created successfully',
-            report: reportWithId,
+            report: newReport,
             realTimeNotified: true,
-            aiEnhanced: reportImages.some(img => img.analysis),
             timestamp: new Date().toISOString()
         });
 
@@ -532,93 +262,34 @@ app.post('/api/reports', async (req, res) => {
     }
 });
 
-// Get reports with enhanced filtering
+// Get reports with enhanced filtering (Prisma-based)
 app.get('/api/reports', async (req, res) => {
     try {
         console.log('📋 Reports list request');
-        const { status, type, priority, hasImages, aiAnalyzed, limit = 50 } = req.query;
+        const { status, type, priority, hasImages, limit = 50 } = req.query;
 
-        // Check if Firebase is available
-        if (!db) {
-            console.warn('⚠️ Firebase not available, returning mock reports');
-            const mockReports = [
-                {
-                    id: 'mock_1',
-                    title: 'Illegal Dumping - Main Street',
-                    type: 'emergency',
-                    description: 'Large amount of construction waste dumped illegally',
-                    location: 'Main Street, Downtown',
-                    priority: 'high',
-                    status: 'open',
-                    reportedBy: 'John Doe',
-                    reportedById: 'user123',
-                    contactInfo: { name: 'John Doe', phone: '+1234567890' },
-                    images: [],
-                    aiAnalyzed: false,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
-                },
-                {
-                    id: 'mock_2',
-                    title: 'Feedback from Sarah Wilson',
-                    type: 'feedback',
-                    description: 'Great service! Very satisfied with the waste collection.',
-                    location: 'Contact Form',
-                    priority: 'low',
-                    status: 'resolved',
-                    reportedBy: 'Sarah Wilson',
-                    reportedById: 'feedback_user',
-                    contactInfo: { name: 'Sarah Wilson', email: 'sarah@example.com', rating: 5 },
-                    images: [],
-                    aiAnalyzed: false,
-                    createdAt: new Date(Date.now() - 86400000).toISOString(),
-                    updatedAt: new Date().toISOString()
+        const where = {};
+        if (status) where.status = status;
+        if (type) where.type = type;
+        if (priority) where.priority = priority;
+
+        const reports = await prisma.report.findMany({
+            where,
+            orderBy: { createdAt: 'desc' },
+            take: parseInt(limit),
+            include: {
+                reportedBy: {
+                    select: { id: true, fullName: true, email: true }
                 }
-            ];
-
-            return res.json({
-                success: true,
-                reports: mockReports,
-                total: mockReports.length,
-                filters: { status, type, priority, hasImages, aiAnalyzed },
-                enhancedFeatures: {
-                    aiAnalysisEnabled: false,
-                    imageUploadEnabled: false,
-                    realTimeEnabled: true
-                },
-                timestamp: new Date().toISOString()
-            });
-        }
-
-        let query = db.collection('reports');
-
-        // Apply filters
-        if (status) query = query.where('status', '==', status);
-        if (type) query = query.where('type', '==', type);
-        if (priority) query = query.where('priority', '==', priority);
-        if (hasImages === 'true') query = query.where('metadata.hasImages', '==', true);
-        if (aiAnalyzed === 'true') query = query.where('aiAnalyzed', '==', true);
-
-        // Order and limit
-        query = query.orderBy('createdAt', 'desc').limit(parseInt(limit));
-
-        const reportsSnapshot = await query.get();
-        const reports = [];
-
-        reportsSnapshot.forEach(doc => {
-            reports.push({
-                id: doc.id,
-                ...doc.data()
-            });
+            }
         });
 
         res.json({
             success: true,
             reports,
             total: reports.length,
-            filters: { status, type, priority, hasImages, aiAnalyzed },
-            enhancedFeatures: {
-                aiAnalysisEnabled: true,
+            filters: { status, type, priority, hasImages },
+            features: {
                 imageUploadEnabled: true,
                 realTimeEnabled: true
             },
@@ -634,59 +305,36 @@ app.get('/api/reports', async (req, res) => {
     }
 });
 
-// ==================== ENHANCED ADMIN ROUTES ====================
-app.get('/api/admin/dashboard', async (req, res) => {
+// ==================== ADMIN ROUTES (Prisma-based) ====================
+app.get('/api/admin/dashboard', authenticateJWT, async (req, res) => {
     try {
         console.log('📊 Admin dashboard request');
 
-        // Check if Firebase is available
-        if (!db) {
-            console.warn('⚠️ Firebase not available, returning mock dashboard data');
-            return res.json({
-                success: true,
-                data: {
-                    totalUsers: 150,
-                    activeReports: 5,
-                    resolvedReports: 45,
-                    totalReports: 50,
-                    totalImages: 12,
-                    aiAnalyzedReports: 8,
-                    criticalReports: 2,
-                    systemStatus: 'online',
-                    serverUptime: Math.floor(process.uptime()),
-                    lastUpdated: new Date().toISOString(),
-                    features: {
-                        realTimeEnabled: true,
-                        aiAnalysisEnabled: false,
-                        imageUploadEnabled: false,
-                        pushNotificationsEnabled: true
-                    }
-                },
-                timestamp: new Date().toISOString()
+        // Check if user is admin
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                error: 'Admin access required'
             });
         }
 
-        const [usersSnapshot, reportsSnapshot, openReports, resolvedReports] = await Promise.all([
-            db.collection('users').get(),
-            db.collection('reports').get(),
-            db.collection('reports').where('status', '==', 'open').get(),
-            db.collection('reports').where('status', '==', 'resolved').get()
+        const [totalUsers, totalReports, activeReports, resolvedReports] = await Promise.all([
+            prisma.user.count(),
+            prisma.report.count(),
+            prisma.report.count({ where: { status: 'open' } }),
+            prisma.report.count({ where: { status: 'resolved' } })
         ]);
 
-        // Enhanced statistics
+        // Get additional stats
+        const reports = await prisma.report.findMany();
         let totalImages = 0;
-        let aiAnalyzedReports = 0;
         let criticalReports = 0;
 
-        reportsSnapshot.forEach(doc => {
-            const data = doc.data();
-            if (data.images && data.images.length > 0) {
-                totalImages += data.images.length;
+        reports.forEach(report => {
+            if (report.images && report.images.length > 0) {
+                totalImages += report.images.length;
             }
-            if (data.aiAnalyzed) {
-                aiAnalyzedReports++;
-            }
-            if (data.priority === 'critical') {
+            if (report.priority === 'critical') {
                 criticalReports++;
             }
         });
@@ -694,21 +342,21 @@ app.get('/api/admin/dashboard', async (req, res) => {
         res.json({
             success: true,
             data: {
-                totalUsers: usersSnapshot.size,
-                activeReports: openReports.size,
-                resolvedReports: resolvedReports.size,
-                totalReports: reportsSnapshot.size,
+                totalUsers,
+                activeReports,
+                resolvedReports,
+                totalReports,
                 totalImages,
-                aiAnalyzedReports,
                 criticalReports,
                 systemStatus: 'online',
                 serverUptime: Math.floor(process.uptime()),
                 lastUpdated: new Date().toISOString(),
                 features: {
                     realTimeEnabled: true,
-                    aiAnalysisEnabled: true,
                     imageUploadEnabled: true,
-                    pushNotificationsEnabled: true
+                    pushNotificationsEnabled: true,
+                    jwtAuthEnabled: true,
+                    prismaEnabled: true
                 }
             },
             timestamp: new Date().toISOString()
@@ -723,79 +371,33 @@ app.get('/api/admin/dashboard', async (req, res) => {
     }
 });
 
-// Get AI analytics
-app.get('/api/admin/ai-analytics', async (req, res) => {
+// ==================== USER MANAGEMENT ROUTES (Prisma-based) ====================
+app.get('/api/users', authenticateJWT, async (req, res) => {
     try {
-        const reportsSnapshot = await db.collection('reports').where('aiAnalyzed', '==', true).get();
-
-        const analytics = {
-            totalAnalyzed: 0,
-            wasteTypes: {},
-            severityLevels: {},
-            environmentalImpact: [],
-            averageConfidence: 0
-        };
-
-        let confidenceSum = 0;
-
-        reportsSnapshot.forEach(doc => {
-            const report = doc.data();
-            if (report.images && report.images.length > 0) {
-                report.images.forEach(image => {
-                    if (image.analysis) {
-                        analytics.totalAnalyzed++;
-
-                        // Count waste types
-                        const wasteType = image.analysis.wasteType;
-                        analytics.wasteTypes[wasteType] = (analytics.wasteTypes[wasteType] || 0) + 1;
-
-                        // Count severity levels
-                        const severity = image.analysis.severityLevel;
-                        analytics.severityLevels[severity] = (analytics.severityLevels[severity] || 0) + 1;
-
-                        // Collect environmental impact scores
-                        analytics.environmentalImpact.push(image.analysis.environmentalImpact);
-
-                        // Sum confidence scores
-                        confidenceSum += image.analysis.confidence || 0;
-                    }
-                });
-            }
-        });
-
-        if (analytics.totalAnalyzed > 0) {
-            analytics.averageConfidence = Math.round(confidenceSum / analytics.totalAnalyzed);
+        // Check if user is admin
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                error: 'Admin access required'
+            });
         }
 
-        res.json({
-            success: true,
-            analytics,
-            timestamp: new Date().toISOString()
-        });
-
-    } catch (error) {
-        console.error('❌ AI Analytics error:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to fetch AI analytics'
-        });
-    }
-});
-
-// ==================== USER MANAGEMENT ROUTES ====================
-app.get('/api/users', async (req, res) => {
-    try {
-        const usersSnapshot = await db.collection('users').orderBy('createdAt', 'desc').get();
-        const users = [];
-
-        usersSnapshot.forEach(doc => {
-            const userData = doc.data();
-            users.push({
-                id: doc.id,
-                ...userData,
-                // Remove sensitive data
-                preferences: undefined
-            });
+        const users = await prisma.user.findMany({
+            orderBy: { createdAt: 'desc' },
+            select: {
+                id: true,
+                email: true,
+                fullName: true,
+                role: true,
+                phoneNumber: true,
+                address: true,
+                isActive: true,
+                joinedAt: true,
+                lastLogin: true,
+                createdAt: true,
+                updatedAt: true
+                // Exclude passwordHash for security
+            }
         });
 
         res.json({
@@ -823,7 +425,6 @@ io.on('connection', (socket) => {
         socket.join('admins');
         console.log(`👨‍💼 Admin joined: ${socket.id}`);
 
-        // Send welcome message to admin
         socket.emit('adminWelcome', {
             message: 'Connected to admin real-time updates',
             timestamp: new Date().toISOString()
@@ -835,7 +436,6 @@ io.on('connection', (socket) => {
         socket.join(`user_${userId}`);
         console.log(`👤 User ${userId} joined: ${socket.id}`);
 
-        // Send welcome message to user
         socket.emit('userWelcome', {
             message: 'Connected to GreenGrid real-time updates',
             timestamp: new Date().toISOString()
@@ -864,16 +464,17 @@ app.use((req, res) => {
         error: `Route ${req.method} ${req.path} not found`,
         availableRoutes: [
             'GET /api/health',
-            'POST /api/auth/sync',
+            'POST /api/auth/register',
+            'POST /api/auth/login',
+            'GET /api/auth/profile',
             'GET /api/users',
             'GET /api/reports',
             'POST /api/reports',
             'POST /api/upload/images',
             'DELETE /api/upload/images/:publicId',
-            'GET /api/admin/dashboard',
-            'GET /api/admin/ai-analytics'
+            'GET /api/admin/dashboard'
         ],
-        version: '4.0.0',
+        version: '5.0.0',
         timestamp: new Date().toISOString()
     });
 });
@@ -891,16 +492,15 @@ app.use((err, req, res, next) => {
 
 // ==================== START SERVER ====================
 server.listen(PORT, () => {
-    console.log('🚀 GreenGrid Backend v4.0 - AI Enhanced!');
+    console.log('🚀 GreenGrid Backend v5.0 - Supabase/Prisma + JWT!');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log(`📡 Server URL: http://localhost:${PORT}`);
-    console.log(`🔥 Database: Firebase Firestore`);
+    console.log(`🔥 Database: Supabase PostgreSQL with Prisma ORM`);
+    console.log(`🔐 Authentication: JWT-based authentication`);
     console.log(`🔌 Real-time: Socket.io WebSocket enabled`);
-    console.log(`🤖 AI Analysis: Mock AI enabled (OpenAI ready)`);
     console.log(`☁️ Image Upload: Cloudinary enabled`);
     console.log(`🏥 Health Check: http://localhost:${PORT}/api/health`);
     console.log(`📊 Admin Dashboard: http://localhost:${PORT}/api/admin/dashboard`);
-    console.log(`🧠 AI Analytics: http://localhost:${PORT}/api/admin/ai-analytics`);
     console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 });
@@ -914,4 +514,17 @@ process.on('unhandledRejection', (err, promise) => {
 process.on('uncaughtException', (err) => {
     console.error('❌ Uncaught Exception:', err.message);
     process.exit(1);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+    console.log('🛑 SIGTERM received, shutting down gracefully...');
+    await prisma.$disconnect();
+    process.exit(0);
+});
+
+process.on('SIGINT', async () => {
+    console.log('🛑 SIGINT received, shutting down gracefully...');
+    await prisma.$disconnect();
+    process.exit(0);
 });
