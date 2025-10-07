@@ -1,0 +1,326 @@
+{
+    "client": "Thunder Client",
+    "collectionName": "GreenGrid API Tests",
+    "dateExported": "2025-01-27T00:00:00.000Z",
+    "version": "1.1",
+    "folders": [
+        {
+            "id": "health-checks",
+            "name": "Health & Status",
+            "containerId": "",
+            "created": "2025-01-27T00:00:00.000Z",
+            "sortNum": 10000
+        },
+        {
+            "id": "auth",
+            "name": "Authentication",
+            "containerId": "",
+            "created": "2025-01-27T00:00:00.000Z",
+            "sortNum": 20000
+        },
+        {
+            "id": "admin",
+            "name": "Admin Endpoints",
+            "containerId": "",
+            "created": "2025-01-27T00:00:00.000Z",
+            "sortNum": 30000
+        },
+        {
+            "id": "emergency",
+            "name": "Emergency Reports",
+            "containerId": "",
+            "created": "2025-01-27T00:00:00.000Z",
+            "sortNum": 40000
+        }
+    ],
+    "requests": [
+        {
+            "id": "health-check",
+            "name": "Health Check",
+            "url": "http://localhost:5000/api/health",
+            "method": "GET",
+            "sortNum": 10000,
+            "created": "2025-01-27T00:00:00.000Z",
+            "modified": "2025-01-27T00:00:00.000Z",
+            "headers": [],
+            "params": [],
+            "tests": [],
+            "containerId": "health-checks"
+        },
+        {
+            "id": "test-endpoint",
+            "name": "Test Endpoint",
+            "url": "http://localhost:5000/api/test",
+            "method": "GET",
+            "sortNum": 10001,
+            "created": "2025-01-27T00:00:00.000Z",
+            "modified": "2025-01-27T00:00:00.000Z",
+            "headers": [],
+            "params": [],
+            "tests": [],
+            "containerId": "health-checks"
+        },
+        {
+            "id": "auth-sync",
+            "name": "Auth Sync",
+            "url": "http://localhost:5000/api/auth/sync",
+            "method": "POST",
+            "sortNum": 20000,
+            "created": "2025-01-27T00:00:00.000Z",
+            "modified": "2025-01-27T00:00:00.000Z",
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "body": {
+                "type": "json",
+                "raw": "{\n  \"uid\": \"test-user-123\",\n  \"email\": \"test@greengrid.com\",\n  \"name\": \"Test User\",\n  \"phone\": \"+1234567890\",\n  \"photoURL\": \"https://example.com/photo.jpg\",\n  \"providerId\": \"google.com\"\n}",
+                "form": []
+            },
+            "tests": [],
+            "containerId": "auth"
+        },
+        {
+            "id": "admin-dashboard",
+            "name": "Admin Dashboard",
+            "url": "http://localhost:5000/api/admin/dashboard",
+            "method": "GET",
+            "sortNum": 30000,
+            "created": "2025-01-27T00:00:00.000Z",
+            "modified": "2025-01-27T00:00:00.000Z",
+            "headers": [],
+            "params": [],
+            "tests": [],
+            "containerId": "admin"
+        },
+        {
+            "id": "admin-users",
+            "name": "Admin Users",
+            "url": "http://localhost:5000/api/admin/users",
+            "method": "GET",
+            "sortNum": 30001,
+            "created": "2025-01-27T00:00:00.000Z",
+            "modified": "2025-01-27T00:00:00.000Z",
+            "headers": [],
+            "params": [],
+            "tests": [],
+            "containerId": "admin"
+        },
+        {
+            "id": "admin-emergency-reports",
+            "name": "Admin Emergency Reports",
+            "url": "http://localhost:5000/api/admin/emergency/reports",
+            "method": "GET",
+            "sortNum": 30002,
+            "created": "2025-01-27T00:00:00.000Z",
+            "modified": "2025-01-27T00:00:00.000Z",
+            "headers": [],
+            "params": [],
+            "tests": [],
+            "containerId": "admin"
+        },
+        {
+            "id": "admin-stats",
+            "name": "Admin Stats",
+            "url": "http://localhost:5000/api/admin/stats",
+            "method": "GET",
+            "sortNum": 30003,
+            "created": "2025-01-27T00:00:00.000Z",
+            "modified": "2025-01-27T00:00:00.000Z",
+            "headers": [],
+            "params": [],
+            "tests": [],
+            "containerId": "admin"
+        },
+        {
+            "id": "submit-emergency-report",
+            "name": "Submit Emergency Report",
+            "url": "http://localhost:5000/api/emergency/report",
+            "method": "POST",
+            "sortNum": 40000,
+            "created": "2025-01-27T00:00:00.000Z",
+            "modified": "2025-01-27T00:00:00.000Z",
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "body": {
+                "type": "json",
+                "raw": "{\n  \"issueType\": \"illegal-dumping\",\n  \"location\": \"Main Street, Colombo\",\n  \"description\": \"Large pile of construction waste dumped illegally\",\n  \"priority\": \"high\",\n  \"contactName\": \"John Doe\",\n  \"contactPhone\": \"+1234567890\"\n}",
+                "form": []
+            },
+            "tests": [],
+            "containerId": "emergency"
+        },
+        {
+            "id": "get-emergency-reports",
+            "name": "Get Emergency Reports",
+            "url": "http://localhost:5000/api/emergency/reports",
+            "method": "GET",
+            "sortNum": 40001,
+            "created": "2025-01-27T00:00:00.000Z",
+            "modified": "2025-01-27T00:00:00.000Z",
+            "headers": [],
+            "params": [
+                {
+                    "name": "status",
+                    "value": "reported"
+                },
+                {
+                    "name": "priority",
+                    "value": "high"
+                },
+                {
+                    "name": "limit",
+                    "value": "10"
+                },
+                {
+                    "name": "offset",
+                    "value": "0"
+                }
+            ],
+            "tests": [],
+            "containerId": "emergency"
+        },
+        {
+            "id": "update-report-status",
+            "name": "Update Report Status",
+            "url": "http://localhost:5000/api/emergency/report/EMR-123456/status",
+            "method": "PUT",
+            "sortNum": 40002,
+            "created": "2025-01-27T00:00:00.000Z",
+            "modified": "2025-01-27T00:00:00.000Z",
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "body": {
+                "type": "json",
+                "raw": "{\n  \"status\": \"investigating\",\n  \"notes\": \"Investigation started by admin team\",\n  \"assignedTo\": \"admin-001\"\n}",
+                "form": []
+            },
+            "tests": [],
+            "containerId": "emergency"
+        },
+        {
+            "id": "register-user",
+            "name": "Register User",
+            "url": "http://localhost:5000/api/auth/register",
+            "method": "POST",
+            "sortNum": 20001,
+            "created": "2025-01-27T00:00:00.000Z",
+            "modified": "2025-01-27T00:00:00.000Z",
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "body": {
+                "type": "json",
+                "raw": "{\n  \"email\": \"newuser@greengrid.com\",\n  \"password\": \"password123\",\n  \"name\": \"New User\",\n  \"role\": \"resident\",\n  \"phone\": \"+1234567890\",\n  \"address\": \"123 Main St, Colombo\"\n}",
+                "form": []
+            },
+            "tests": [],
+            "containerId": "auth"
+        },
+        {
+            "id": "login-user",
+            "name": "Login User",
+            "url": "http://localhost:5000/api/auth/login",
+            "method": "POST",
+            "sortNum": 20002,
+            "created": "2025-01-27T00:00:00.000Z",
+            "modified": "2025-01-27T00:00:00.000Z",
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "body": {
+                "type": "json",
+                "raw": "{\n  \"email\": \"test@greengrid.com\",\n  \"password\": \"password123\"\n}",
+                "form": []
+            },
+            "tests": [],
+            "containerId": "auth"
+        },
+        {
+            "id": "get-user-profile",
+            "name": "Get User Profile",
+            "url": "http://localhost:5000/api/auth/profile/test-user-123",
+            "method": "GET",
+            "sortNum": 20003,
+            "created": "2025-01-27T00:00:00.000Z",
+            "modified": "2025-01-27T00:00:00.000Z",
+            "headers": [],
+            "params": [],
+            "tests": [],
+            "containerId": "auth"
+        },
+        {
+            "id": "upload-report-images",
+            "name": "Upload Report Images",
+            "url": "http://localhost:5000/api/emergency/report/EMR-123456/images",
+            "method": "POST",
+            "sortNum": 40003,
+            "created": "2025-01-27T00:00:00.000Z",
+            "modified": "2025-01-27T00:00:00.000Z",
+            "headers": [],
+            "params": [],
+            "body": {
+                "type": "formdata",
+                "form": [
+                    {
+                        "name": "images",
+                        "type": "file",
+                        "value": ""
+                    }
+                ]
+            },
+            "tests": [],
+            "containerId": "emergency"
+        },
+        {
+            "id": "test-404",
+            "name": "Test 404 Error",
+            "url": "http://localhost:5000/api/nonexistent",
+            "method": "GET",
+            "sortNum": 10002,
+            "created": "2025-01-27T00:00:00.000Z",
+            "modified": "2025-01-27T00:00:00.000Z",
+            "headers": [],
+            "params": [],
+            "tests": [],
+            "containerId": "health-checks"
+        }
+    ],
+    "environments": [
+        {
+            "id": "development",
+            "name": "Development",
+            "data": [
+                {
+                    "name": "baseUrl",
+                    "value": "http://localhost:5000"
+                },
+                {
+                    "name": "apiVersion",
+                    "value": "v1"
+                }
+            ],
+            "dataType": "keyvalue",
+            "isActive": true,
+            "created": "2025-01-27T00:00:00.000Z",
+            "modified": "2025-01-27T00:00:00.000Z",
+            "sortNum": 10000
+        }
+    ]
+}
