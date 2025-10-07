@@ -1,155 +1,130 @@
-// src/controllers/authController.js
-import { auth, db } from '../config/firebase.js';
-import { sendSMS } from '../services/smsService.js';
+import { PrismaClient } from '@prisma/client';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs'; 
 
+const prisma = new PrismaClient();
+const SECRET_KEY = process.env.JWT_SECRET || 'your_super_secret_key'; // Use env var in production!
+
+// Register
 export const registerUser = async (req, res) => {
-    try {
-        const { email, password, name, role = 'resident', phone, address } = req.body;
+  try {
+    const { email, password, fullName, role = 'resident', phoneNumber, address } = req.body;
 
-        // Validate input
-        if (!email || !password || !name) {
-            return res.status(400).json({
-                success: false,
-                error: 'Email, password, and name are required'
-            });
-        }
-
-        // Create user with Firebase Auth
-        const userRecord = await auth.createUser({
-            email,
-            password,
-            displayName: name,
-            phoneNumber: phone || null
-        });
-
-        // Save additional user data to Firestore
-        const userData = {
-            uid: userRecord.uid,
-            email,
-            name,
-            role,
-            phone: phone || '',
-            address: address || '',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            status: 'active',
-            profile: {
-                communityId: '',
-                preferences: {
-                    notifications: true,
-                    emailUpdates: true,
-                    smsUpdates: phone ? true : false
-                }
-            }
-        };
-
-        await db.collection('users').doc(userRecord.uid).set(userData);
-
-        // Send welcome SMS if phone provided
-        if (phone) {
-            try {
-                await sendSMS(phone, `🌱 Welcome to GreenGrid! Your account has been created successfully. Start managing waste efficiently with us.`);
-            } catch (smsError) {
-                console.log('Welcome SMS failed:', smsError.message);
-            }
-        }
-
-        res.status(201).json({
-            success: true,
-            user: {
-                uid: userRecord.uid,
-                email,
-                name,
-                role,
-                phone
-            },
-            message: 'User registered successfully'
-        });
-
-    } catch (error) {
-        console.error('Registration error:', error);
-        res.status(400).json({
-            success: false,
-            error: error.message || 'Registration failed'
-        });
+    if (!email || !password || !fullName) {
+      return res.status(400).json({ success: false, error: 'Email, password, and name are required' });
     }
+
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return res.status(400).json({ success: false, error: 'User already exists' });
+    }
+
+    // Hash password
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    // Create user
+    const user = await prisma.user.create({
+      data: {
+        email,
+        fullName,
+        role,
+        phoneNumber: phoneNumber || '',
+        address: address || '',
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        joinedAt: new Date(),
+        lastLogin: null,
+        avatarUrl: '', // default blank
+        passwordHash // new field
+      }
+    });
+
+    // Create JWT token
+    const token = jwt.sign({ userId: user.id, email: user.email, role: user.role }, SECRET_KEY, { expiresIn: '2h' });
+
+    res.status(201).json({
+      success: true,
+      user: { id: user.id, email: user.email, fullName: user.fullName, role: user.role },
+      token,
+      message: 'User registered successfully'
+    });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(400).json({ success: false, error: error.message || 'Registration failed' });
+  }
 };
 
+
+// Login
 export const loginUser = async (req, res) => {
-    try {
-        const { email, password } = req.body;
-
-        if (!email || !password) {
-            return res.status(400).json({
-                success: false,
-                error: 'Email and password are required'
-            });
-        }
-
-        // For demo purposes, we'll verify user exists in Firestore
-        // In production, you'd use Firebase Auth REST API or client-side auth
-        const usersSnapshot = await db.collection('users').where('email', '==', email).get();
-
-        if (usersSnapshot.empty) {
-            return res.status(401).json({
-                success: false,
-                error: 'Invalid credentials'
-            });
-        }
-
-        const userData = usersSnapshot.docs[0].data();
-
-        // Update last login
-        await db.collection('users').doc(userData.uid).update({
-            lastLogin: new Date().toISOString()
-        });
-
-        res.json({
-            success: true,
-            user: {
-                uid: userData.uid,
-                email: userData.email,
-                name: userData.name,
-                role: userData.role,
-                phone: userData.phone
-            },
-            message: 'Login successful'
-        });
-
-    } catch (error) {
-        console.error('Login error:', error);
-        res.status(401).json({
-            success: false,
-            error: 'Login failed'
-        });
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ success: false, error: 'Email and password are required' });
     }
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user || !user.isActive) {
+      return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+
+    // Check password
+    const valid = await bcrypt.compare(password, user.passwordHash);
+    if (!valid) {
+      return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+
+    // Update last login
+    await prisma.user.update({ where: { id: user.id }, data: { lastLogin: new Date() } });
+
+    // Create JWT
+    const token = jwt.sign({ userId: user.id, email: user.email, role: user.role }, SECRET_KEY, { expiresIn: '2h' });
+
+    res.json({
+      success: true,
+      user: { id: user.id, email: user.email, fullName: user.fullName, role: user.role },
+      token,
+      message: 'Login successful'
+    });
+
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(401).json({ success: false, error: 'Login failed' });
+  }
 };
 
+
+// Get Profile (protected)
 export const getUserProfile = async (req, res) => {
-    try {
-        const { uid } = req.params;
+  try {
+    const { userId } = req.user; // From JWT middleware
 
-        const userDoc = await db.collection('users').doc(uid).get();
-
-        if (!userDoc.exists) {
-            return res.status(404).json({
-                success: false,
-                error: 'User not found'
-            });
-        }
-
-        const userData = userDoc.data();
-
-        res.json({
-            success: true,
-            user: userData
-        });
-
-    } catch (error) {
-        console.error('Get profile error:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to fetch user profile'
-        });
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
+
+    res.json({ success: true, user });
+  } catch (error) {
+    console.error('Get profile error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch user profile' });
+  }
+};
+
+
+// JWT Middleware
+export const authenticateJWT = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  if (authHeader) {
+    const token = authHeader.split(' ')[1];
+    jwt.verify(token, SECRET_KEY, (err, user) => {
+      if (err) return res.status(403).json({ message: 'Invalid token' });
+      req.user = user;
+      next();
+    });
+  } else {
+    res.status(401).json({ message: 'Unauthorized' });
+  }
 };
