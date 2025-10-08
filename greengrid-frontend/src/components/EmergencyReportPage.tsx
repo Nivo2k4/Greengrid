@@ -351,7 +351,7 @@ const EmergencyReportPage = React.memo(() => {
                   <Label className="text-foreground font-medium text-base">
                     Type of Emergency *
                   </Label>
-                  <Select value={formData.issueType} onValueChange={(value) => handleInputChange('issueType', value)}>
+                  <Select value={formData.issueType} onValueChange={(value: string) => handleInputChange('issueType', value)}>
                     <SelectTrigger className="h-14 border-border focus:border-red-500 focus:ring-red-500/20">
                       <SelectValue placeholder="Select the type of emergency..." />
                     </SelectTrigger>

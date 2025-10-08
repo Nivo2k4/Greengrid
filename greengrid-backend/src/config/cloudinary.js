@@ -3,20 +3,22 @@ import cloudinary from 'cloudinary';
 import multer from 'multer';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 
+console.log('Process Env:',process.env.CLOUDINARY_API_KEY);
 // Check if Cloudinary is configured
 const isCloudinaryConfigured = () => {
     return !!(process.env.CLOUDINARY_CLOUD_NAME &&
         process.env.CLOUDINARY_API_KEY &&
         process.env.CLOUDINARY_API_SECRET);
 };
-
-// Configure Cloudinary only if credentials are available
+console.log('Process Env:',process.env.CLOUDINARY_API_KEY);
+console.log('Process Env:',process.env.CLOUDINARY_CLOUD_NAME);
 if (isCloudinaryConfigured()) {
     cloudinary.config({
         cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
         api_key: process.env.CLOUDINARY_API_KEY,
         api_secret: process.env.CLOUDINARY_API_SECRET
     });
+
 
     // Test Cloudinary connection
     const testConnection = async () => {

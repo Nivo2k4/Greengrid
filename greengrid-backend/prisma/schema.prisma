@@ -6,7 +6,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -66,7 +65,7 @@ enum Status {
   closed
 }
 
-// Update your existing User model to include relations
+
 model User {
   id           String   @id @default(uuid())
   email        String   @unique

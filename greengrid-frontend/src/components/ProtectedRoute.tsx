@@ -8,14 +8,14 @@ import { Shield, Lock, Users, ArrowRight } from 'lucide-react';
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireAuth?: boolean;
-  allowedRoles?: ('resident' | 'community-leader')[];
+  allowedRoles?: ('resident' | 'community_leader')[];
   fallbackMessage?: string;
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   requireAuth = true,
-  allowedRoles = ['resident', 'community-leader'],
+  allowedRoles = ['resident', 'community_leader'],
   fallbackMessage
 }) => {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -43,7 +43,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   // Check role-based access - Only allow community leaders for dashboard
-  if (user && allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
+  if (user && allowedRoles.length > 0 && !allowedRoles.includes(user.role as 'community_leader' | 'resident')) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 dark:from-red-950 dark:via-orange-950 dark:to-yellow-950 flex items-center justify-center p-4">
         <Card className="w-full max-w-md bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm shadow-2xl border-0">

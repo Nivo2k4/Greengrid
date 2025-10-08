@@ -60,7 +60,7 @@ export const AdminPanel: React.FC = () => {
   const [error, setError] = useState("");
 
   // Only allow admin access
-  if (!user || user.role !== "community-leader") {
+  if (!user || user.role !== "community_leader") {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="w-full max-w-md">
@@ -78,7 +78,7 @@ export const AdminPanel: React.FC = () => {
 
   // Fetch leaders from Firestore
   const fetchLeaders = async () => {
-    const q = query(collection(db, "users"), where("role", "==", "community-leader"));
+    const q = query(collection(db, "users"), where("role", "==", "community_leader"));
     const querySnapshot = await getDocs(q);
     setLeaders(
       querySnapshot.docs.map((docSnap) => ({
@@ -99,12 +99,12 @@ export const AdminPanel: React.FC = () => {
       return;
     }
     try {
-      await register({
-        fullName: newLeader.fullName,
-        email: newLeader.email,
-        password: newLeader.password,
-        role: "community-leader",
-      });
+      await register(
+        newLeader.email,
+        newLeader.password,
+        newLeader.fullName,
+        "community_leader"
+      );
       setNewLeader({
         fullName: "",
         email: "",

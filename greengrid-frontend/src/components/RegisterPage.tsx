@@ -56,12 +56,12 @@ const RegisterPage = React.memo(() => {
     }
 
     try {
-      await register({
-        fullName: formData.fullName,
-        email: formData.email,
-        password: formData.password,
-        role: formData.role,
-      });
+    await register(
+      formData.email,
+      formData.password,
+      formData.fullName,
+      formData.role
+    );
       navigate("dashboard");
     } catch (e: any) {
       setError(e.message || "Registration failed. Please try again.");
@@ -144,7 +144,7 @@ const RegisterPage = React.memo(() => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="resident">Resident</SelectItem>
-                <SelectItem value="community-leader">Community Leader</SelectItem>
+                <SelectItem value="community_leader">Community Leader</SelectItem>
               </SelectContent>
             </Select>
 

@@ -88,7 +88,7 @@ const AppContent = React.memo(() => {
         return <TrackingPage />;
       case 'dashboard':
         return (
-          <ProtectedRoute requireAuth={true} allowedRoles={['community-leader']}>
+          <ProtectedRoute requireAuth={true} allowedRoles={['community_leader']}>
             <DashboardPage />
           </ProtectedRoute>
         );
