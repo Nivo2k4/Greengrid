@@ -14,6 +14,8 @@ import { Toaster } from "./components/ui/sonner";
 import { useEffect, Suspense } from "react";
 import React from "react";
 import { RealTimeTest } from './components/RealTimeTest';
+import { PageLoadingSpinner } from './components/LoadingSpinner';
+import { preloadCriticalComponents } from './utils/preloader';
 
 // Code-split heavy pages
 const TrackingPage = React.lazy(() => import("./components/TrackingPage"));
@@ -160,7 +162,7 @@ const AppContent = React.memo(() => {
 
       <main id="main-content" role="main">
         <ErrorBoundary>
-          <Suspense fallback={<div className="p-6">Loading...</div>}>
+          <Suspense fallback={<PageLoadingSpinner />}>
             {renderPage()}
           </Suspense>
         </ErrorBoundary>
@@ -229,6 +231,9 @@ export default function App() {
 
       return () => observer.disconnect();
     }
+
+    // Preload critical components after initial load
+    preloadCriticalComponents();
   }, []);
 
   return (
