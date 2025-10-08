@@ -47,7 +47,7 @@ const HeroSection = React.memo(() => {
   };
 
   return (
-    <section className="min-h-screen bg-gradient-to-br from-background via-background to-accent/10 relative overflow-hidden flex items-center">
+    <section className="min-h-screen bg-gradient-to-br from-background via-background to-accent/10 relative overflow-hidden flex items-center px-4 sm:px-6 lg:px-8">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div 
@@ -88,7 +88,7 @@ const HeroSection = React.memo(() => {
                 Now serving 50,000+ residents
               </div>
 
-              <h1 className="text-5xl lg:text-7xl font-bold text-foreground leading-tight">
+              <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold text-foreground leading-tight">
                 Smart Waste Management for a{" "}
                 <span className="text-primary bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
                   Cleaner Future

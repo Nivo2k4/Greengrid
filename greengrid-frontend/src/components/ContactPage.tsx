@@ -501,4 +501,4 @@ const ContactPage = React.memo(() => {
 
 ContactPage.displayName = 'ContactPage';
 
-export { ContactPage };
+export default ContactPage;

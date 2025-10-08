@@ -714,4 +714,4 @@ const CommunityHubPage = React.memo(() => {
 
 CommunityHubPage.displayName = 'CommunityHubPage';
 
-export { CommunityHubPage };
+export default CommunityHubPage;

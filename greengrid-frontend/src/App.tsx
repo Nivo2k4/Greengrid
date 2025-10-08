@@ -16,14 +16,14 @@ import React from "react";
 import { RealTimeTest } from './components/RealTimeTest';
 
 // Code-split heavy pages
-const TrackingPage = React.lazy(() => import("./components/TrackingPage").then(m => ({ default: m.TrackingPage })));
-const DashboardPage = React.lazy(() => import("./components/DashboardPage").then(m => ({ default: m.DashboardPage })));
-const ContactPage = React.lazy(() => import("./components/ContactPage").then(m => ({ default: m.ContactPage })));
-const EmergencyReportPage = React.lazy(() => import("./components/EmergencyReportPage").then(m => ({ default: m.EmergencyReportPage })));
-const CommunityHubPage = React.lazy(() => import("./components/CommunityHubPage").then(m => ({ default: m.CommunityHubPage })));
-const RegisterPage = React.lazy(() => import('./components/RegisterPage').then(module => ({ default: module.RegisterPage })));
-const AdminPanel = React.lazy(() => import('./components/AdminPanel').then(module => ({ default: module.AdminPanel })));
-const LoginPage = React.lazy(() => import('./components/LoginPage').then(module => ({ default: module.default })));
+const TrackingPage = React.lazy(() => import("./components/TrackingPage"));
+const DashboardPage = React.lazy(() => import("./components/DashboardPage"));
+const ContactPage = React.lazy(() => import("./components/ContactPage"));
+const EmergencyReportPage = React.lazy(() => import("./components/EmergencyReportPage"));
+const CommunityHubPage = React.lazy(() => import("./components/CommunityHubPage"));
+const RegisterPage = React.lazy(() => import('./components/RegisterPage'));
+const AdminPanel = React.lazy(() => import('./components/AdminPanel'));
+const LoginPage = React.lazy(() => import('./components/LoginPage'));
 
 // Home Page Component
 const HomePage = React.memo(() => (
@@ -38,21 +38,49 @@ const HomePage = React.memo(() => (
 
 HomePage.displayName = 'HomePage';
 
-// Simple Error Boundary
-class ErrorBoundary extends React.Component<React.PropsWithChildren<{}>, { hasError: boolean }> {
-  state: { hasError: boolean } = { hasError: false };
-  static getDerivedStateFromError() {
-    return { hasError: true };
+// Enhanced Error Boundary with better debugging
+class ErrorBoundary extends React.Component<React.PropsWithChildren<{}>, { hasError: boolean; error?: Error }> {
+  state: { hasError: boolean; error?: Error } = { hasError: false };
+  
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
   }
-  componentDidCatch(error: unknown) {
+  
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('App runtime error:', error);
+    console.error('Error info:', errorInfo);
   }
+  
   render() {
     if (this.state.hasError) {
       return (
-        <div className="mx-auto max-w-3xl p-6 text-center">
+        <div className="mx-auto max-w-3xl p-6 text-center space-y-4">
           <h2 className="text-2xl font-semibold mb-2">Something went wrong</h2>
-          <p className="text-muted-foreground">Please refresh the page. If the problem persists, contact support.</p>
+          <p className="text-muted-foreground">
+            {this.state.error?.message || 'An unexpected error occurred'}
+          </p>
+          <div className="flex gap-2 justify-center">
+            <button 
+              onClick={() => this.setState({ hasError: false, error: undefined })}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+            >
+              Try Again
+            </button>
+            <button 
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/90"
+            >
+              Reload Page
+            </button>
+          </div>
+          {process.env.NODE_ENV === 'development' && this.state.error && (
+            <details className="mt-4 text-left">
+              <summary className="cursor-pointer text-sm text-muted-foreground">Error Details</summary>
+              <pre className="mt-2 p-4 bg-muted rounded text-xs overflow-auto">
+                {this.state.error.stack}
+              </pre>
+            </details>
+          )}
         </div>
       );
     }
