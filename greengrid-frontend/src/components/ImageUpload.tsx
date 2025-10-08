@@ -8,10 +8,7 @@ import {
     X,
     Image as ImageIcon,
     Loader2,
-    CheckCircle,
-    AlertCircle,
-    Brain,
-    Eye
+    Brain
 } from 'lucide-react';
 
 interface UploadedImage {

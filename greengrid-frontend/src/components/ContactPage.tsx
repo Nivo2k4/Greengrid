@@ -4,7 +4,6 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
-import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
 import { 
   MapPin, 
@@ -21,7 +20,6 @@ import {
   Heart,
   Users,
   Award,
-  Zap
 } from 'lucide-react';
 import { toast } from 'sonner';
 

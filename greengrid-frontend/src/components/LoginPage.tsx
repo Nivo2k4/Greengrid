@@ -2,9 +2,9 @@ import React, { useState } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Card, CardContent } from "./ui/card";
 import { Alert, AlertDescription } from "./ui/alert";
-import { Eye, EyeOff, Mail, Lock, Leaf, ArrowRight, AlertCircle } from "lucide-react";
+import { Leaf, Mail, Lock, EyeOff, Eye, AlertCircle, ArrowRight } from "lucide-react";
 import { useRouter } from "./RouterProvider";
 import { useAuth } from "./AuthProvider";
 

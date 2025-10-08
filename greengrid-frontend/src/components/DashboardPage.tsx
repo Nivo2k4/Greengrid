@@ -4,7 +4,6 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { ScrollArea } from './ui/scroll-area';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Progress } from './ui/progress';
 import { Separator } from './ui/separator';
@@ -25,7 +24,6 @@ import {
   RefreshCw,
   MessageSquare,
   ThumbsUp,
-  ThumbsDown
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -36,6 +34,7 @@ import {
   Tooltip, 
   ResponsiveContainer,
   PieChart as RechartsPieChart,
+  Pie,
   Cell,
   Legend
 } from 'recharts';
@@ -245,7 +244,7 @@ const DashboardPage = React.memo(() => {
       pending: { color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400', icon: Clock },
       scheduled: { color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400', icon: Calendar }
     };
-    return configs[status] || configs.new;
+    return configs[status as keyof typeof configs] || configs.new;
   }, []);
 
   const renderStars = useCallback((rating: number) => {
@@ -421,18 +420,18 @@ const DashboardPage = React.memo(() => {
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <RechartsPieChart>
-                    <RechartsPieChart
+                    <Pie
                       data={feedbackChartData}
                       cx="50%"
                       cy="50%"
                       outerRadius={100}
                       dataKey="value"
-                      label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
+                      label={({ percent }: { percent: number }) => `${(percent * 100).toFixed(0)}%`}
                     >
                       {feedbackChartData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
-                    </RechartsPieChart>
+                    </Pie>
                     <Tooltip 
                       contentStyle={{ 
                         backgroundColor: 'hsl(var(--card))',

@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { Badge } from "./ui/badge";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import {
@@ -11,7 +10,6 @@ import {
   Shield,
   Settings,
   Trash2,
-  Edit,
   Save,
   X,
   Plus,
@@ -21,6 +19,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { useAuth } from "./AuthProvider";
+// @ts-ignore
 import { db } from "../config/firebase";
 import { collection, query, where, getDocs, doc, deleteDoc } from "firebase/firestore";
 

@@ -6,7 +6,6 @@ import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Badge } from './ui/badge';
-import { Separator } from './ui/separator';
 import { Alert, AlertDescription } from './ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 import { 
@@ -199,7 +198,7 @@ const EmergencyReportPage = React.memo(() => {
       let imageUrls = [];
       if (formData.photos.length > 0) {
         const formDataToUpload = new FormData();
-        formData.photos.forEach((photo, index) => {
+        formData.photos.forEach((photo) => {
           formDataToUpload.append('images', photo);
         });
 

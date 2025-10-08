@@ -36,25 +36,26 @@ const SimpleLogin: React.FC = () => {
         if (error) setError(null);
     };
 
-    const validateForm = (): boolean => {
-        if (!formData.email) {
-            setError({ field: 'email', message: 'Email is required' });
-            return false;
-        }
-        if (!formData.email.includes('@')) {
-            setError({ field: 'email', message: 'Please enter a valid email address' });
-            return false;
-        }
-        if (!formData.password) {
-            setError({ field: 'password', message: 'Password is required' });
-            return false;
-        }
-        if (formData.password.length < 6) {
-            setError({ field: 'password', message: 'Password must be at least 6 characters' });
-            return false;
-        }
-        return true;
-    };
+    // Validation function (currently unused but kept for future use)
+    // const validateForm = (): boolean => {
+    //     if (!formData.email) {
+    //         setError({ field: 'email', message: 'Email is required' });
+    //         return false;
+    //     }
+    //     if (!formData.email.includes('@')) {
+    //         setError({ field: 'email', message: 'Please enter a valid email address' });
+    //         return false;
+    //     }
+    //     if (!formData.password) {
+    //         setError({ field: 'password', message: 'Password is required' });
+    //         return false;
+    //     }
+    //     if (formData.password.length < 6) {
+    //         setError({ field: 'password', message: 'Password must be at least 6 characters' });
+    //         return false;
+    //     }
+    //     return true;
+    // };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

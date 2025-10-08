@@ -1,6 +1,6 @@
 import { Button } from "./ui/button";
 import { useState, useEffect, useCallback } from "react";
-import { Menu, X, ChevronDown, Sun, Moon, Monitor, AlertTriangle, User, LogOut } from "lucide-react";
+import { ChevronDown, Sun, Moon, Monitor, AlertTriangle, User, LogOut } from "lucide-react";
 import { useTheme } from "./ThemeProvider";
 import { useRouter } from "./RouterProvider";
 import { useAuth } from "./AuthProvider";

@@ -4,40 +4,24 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Input } from "./ui/input";
 import { Avatar, AvatarFallback } from "./ui/avatar";
-import { CommunityLeaderInfo } from "./CommunityLeaderInfo";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { 
   Users, 
   MessageSquare, 
   Calendar, 
-  TrendingUp, 
-  Award,
   MapPin,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  Star,
-  ArrowRight,
   Leaf,
   Recycle,
-  Trash2,
   Trophy, 
   MessageCircle, 
-  Heart,
   Share2,
   Target,
-  TreePine,
-  Lightbulb,
-  UserPlus,
-  ChevronRight,
-  ThumbsUp,
-  Send,
-  Filter,
   Search,
   Plus,
   Eye,
   Globe,
-  Zap
+  UserPlus,
+  ThumbsUp
 } from 'lucide-react';
 import { ImageWithFallback } from './common/ImageWithFallback';
 
@@ -87,7 +71,7 @@ interface Event {
 const CommunityHubPage = React.memo(() => {
   const [activeTab, setActiveTab] = useState('overview');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [_selectedCategory, _setSelectedCategory] = useState('all');
 
   // Community statistics
   const communityStats: CommunityStats[] = [

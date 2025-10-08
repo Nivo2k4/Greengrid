@@ -3,6 +3,34 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Mail, Calendar, Users, Award } from 'lucide-react';
 
+interface CommunityLeader {
+  fullName: string;
+  email: string;
+  joinedAt: string;
+  avatar?: string;
+}
+
+const COMMUNITY_LEADERS: CommunityLeader[] = [
+  {
+    fullName: 'Sarah Johnson',
+    email: 'sarah.johnson@greengrid.com',
+    joinedAt: '2023-01-15',
+    avatar: undefined
+  },
+  {
+    fullName: 'Michael Chen',
+    email: 'michael.chen@greengrid.com',
+    joinedAt: '2023-03-22',
+    avatar: undefined
+  },
+  {
+    fullName: 'Emily Rodriguez',
+    email: 'emily.rodriguez@greengrid.com',
+    joinedAt: '2023-02-10',
+    avatar: undefined
+  }
+];
+
 
 const CommunityLeaderInfo = React.memo(() => {
   return (
@@ -30,7 +58,7 @@ const CommunityLeaderInfo = React.memo(() => {
                 ) : (
                   <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center">
                     <span className="text-2xl font-bold text-primary-foreground">
-                      {leader.fullName.split(' ').map(n => n[0]).join('')}
+                      {leader.fullName.split(' ').map((n: string) => n[0]).join('')}
                     </span>
                   </div>
                 )}

@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+// @ts-ignore
 import { auth, db } from "../config/firebase"; // Make sure these are exported in your firebase.js
 import {
   signInWithEmailAndPassword,

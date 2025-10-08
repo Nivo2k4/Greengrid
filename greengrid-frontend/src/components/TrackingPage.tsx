@@ -6,7 +6,6 @@ import { Badge } from './ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { ScrollArea } from './ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { 
   MapPin, 
@@ -22,7 +21,6 @@ import {
   MoreVertical,
   Calendar,
   Users,
-  Route,
   Maximize2,
   Minimize2,
   RefreshCw,
@@ -226,7 +224,7 @@ const TrackingPage = React.memo(() => {
         pulse: false 
       }
     };
-    return configs[status] || configs.upcoming;
+    return configs[status as keyof typeof configs] || configs.upcoming;
   }, []);
 
   // Auto-refresh functionality
@@ -337,23 +335,22 @@ const TrackingPage = React.memo(() => {
                   />
 
                   {/* Truck Markers */}
-                  {trucks.map((truck) => {
-                    const config = getStatusConfig(truck.status);
-                    const IconComponent = config.icon;
-                    const isSelected = selectedTruck === truck.id;
+                  {filteredSchedule.map((item, index) => {
+                    const config = getStatusConfig(item.status);
+                    const isSelected = selectedTruck === item.truckId;
 
                     return (
-                      <TooltipProvider key={truck.id}>
+                      <TooltipProvider key={index}>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <button
-                              onClick={() => handleTruckClick(truck.id)}
+                              onClick={() => handleTruckClick(item.truckId)}
                               className={`absolute transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 hover:scale-110 ${
                                 isSelected ? 'scale-125 z-20' : 'z-10'
                               }`}
                               style={{
-                                left: `${truck.location.x}%`,
-                                top: `${truck.location.y}%`,
+                                left: `${Math.random() * 80 + 10}%`,
+                                top: `${Math.random() * 80 + 10}%`,
                               }}
                             >
                               <div className={`
@@ -370,22 +367,15 @@ const TrackingPage = React.memo(() => {
                               
                               {/* Route line preview */}
                               <div className="absolute top-6 left-6 w-16 h-1 bg-primary/30 rounded-full">
-                                <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: `${truck.currentLoad}%` }} />
+                                <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: `50%` }} />
                               </div>
                             </button>
                           </TooltipTrigger>
-                          <TooltipContent side="top" className="max-w-xs">
-                            <div className="space-y-2">
-                              <div className="font-medium">{truck.name}</div>
-                              <div className="text-sm text-muted-foreground">
-                                Driver: {truck.driver}
-                              </div>
-                              <div className="text-sm">
-                                Load: {truck.currentLoad}% ({truck.currentLoad}/{truck.capacity})
-                              </div>
-                              <div className="text-sm">
-                                ETA: {truck.estimatedTime}
-                              </div>
+                          <TooltipContent className="bg-white dark:bg-gray-800 border shadow-lg">
+                            <div className="text-sm">
+                              <div className="font-medium">{item.area}</div>
+                              <div className="text-gray-600 dark:text-gray-400">Time: {item.time}</div>
+                              <div className="text-gray-600 dark:text-gray-400">Status: {item.status}</div>
                             </div>
                           </TooltipContent>
                         </Tooltip>
