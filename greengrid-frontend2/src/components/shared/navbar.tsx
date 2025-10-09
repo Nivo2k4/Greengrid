@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -91,11 +92,12 @@ export default function Navbar() {
                 )
               )}
             </div>
-
+            
+            {/*Add Login Button*/}
             <div className="flex items-center justify-center mt-4 lg:mt-0 lg:justify-center">
-                <a href="login">
+                <Link to="/login">
                     <Button>Login</Button>
-                </a>
+                </Link>
                 </div>
           </div>
         </div>
