@@ -55,7 +55,7 @@ export default function Register(){
         }} />
       </div>
 
-      <div className="w-full max-w-4xl grid lg:grid-cols-3 gap-8 relative z-10">
+      <div className="w-full max-w-4xl flex items-center justify-center relative z-10">
         {/* Register Card */}
         <Card className="lg:col-span-2 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm shadow-2xl border-0">
           <CardHeader className="text-center pb-6">

@@ -1,13 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { 
-  MapPin, 
-  Phone, 
-  Mail, 
-  Facebook, 
-  Twitter, 
-  Instagram, 
+import {
+  MapPin,
+  Phone,
+  Mail,
+  Facebook,
+  Twitter,
+  Instagram,
   Linkedin,
   ArrowRight,
   Leaf,
@@ -96,9 +96,9 @@ export default function Footer() {
               </div>
               <span className="text-2xl font-bold text-foreground">GreenGrid</span>
             </div>
-            
+
             <p className="text-muted-foreground leading-relaxed max-w-md">
-              Revolutionizing waste management through smart technology, community engagement, 
+              Revolutionizing waste management through smart technology, community engagement,
               and sustainable practices. Building cleaner, greener communities together.
             </p>
 
@@ -131,29 +131,24 @@ export default function Footer() {
 
           {/* Links Sections */}
           <div className="lg:col-span-8">
-        <div className="lg:col-span-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {footerSections.map((section, index) => (
-            <div key={index} className="space-y-4">
-                <h3 className="font-semibold text-foreground">{section.title}</h3>
-                <ul className="space-y-3">
-                {section.links.map((link, linkIndex) => (
-                    <li key={linkIndex}>
-                    <Button
-                        variant="ghost"
-                        className="h-auto p-0 text-sm text-muted-foreground hover:text-primary hover:bg-transparent text-left justify-start"
-                        onClick={() => handleNavigation(link.route)}
-                    >
-                        {link.name}
-                    </Button>
-                    </li>
+            <div className="lg:col-span-8">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+                {footerSections.map((section, index) => (
+                  <div key={index} className="space-y-4">
+                    <h3 className="font-semibold text-foreground">{section.title}</h3>
+                    <ul className="space-y-3">
+                      {section.links.map((link, linkIndex) => (
+                        <li key={linkIndex} className="h-auto p-0 text-sm text-muted-foreground hover:text-primary hover:bg-transparent text-left justify-start cursor-pointer">
+
+                          {link.name}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 ))}
-                </ul>
+              </div>
             </div>
-            ))}
-          </div>
-        </div>
-        </div>
+          </div>
         </div>
 
         {/* Newsletter Signup */}
@@ -163,10 +158,10 @@ export default function Footer() {
             <p className="text-muted-foreground">
               Get the latest updates on service improvements, environmental initiatives, and community impact.
             </p>
-            
+
             <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-              <Input 
-                type="email" 
+              <Input
+                type="email"
                 placeholder="Enter your email"
                 className="flex-1"
               />
@@ -175,7 +170,7 @@ export default function Footer() {
                 <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Button>
             </div>
-            
+
             <p className="text-xs text-muted-foreground">
               We respect your privacy. Unsubscribe at any time.
             </p>
