@@ -5,7 +5,7 @@ import './App.css'
 import { Route, Routes } from 'react-router-dom'
 import LandingPage from './pages/landing'
 import Login from './features/auth/login'
-import Register from './features/auth/register'
+import Register from './features/auth/registerpage'
 
 function App() {
   const [count, setCount] = useState(0)

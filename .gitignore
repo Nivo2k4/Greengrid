@@ -1,5 +1,2 @@
 .vscode
-*
-!greengrid-backend/
-!greengrid-frontend/
-!greengrid-frontend2/
+
