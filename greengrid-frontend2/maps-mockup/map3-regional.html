@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Regional Overview - GreenGrid</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            padding: 15px 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .logo-section h1 {
+            color: white;
+            font-size: 1.8rem;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .nav-btn {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .nav-btn.active {
+            background: #f44336;
+            border-color: #f44336;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+            height: calc(100vh - 80px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            color: #2d3748;
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f44336;
+        }
+
+        .overview-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .stat-card.total { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+        .stat-card.regions { background: linear-gradient(135deg, #3498db, #2980b9); }
+        .stat-card.coverage { background: linear-gradient(135deg, #27ae60, #229954); }
+        .stat-card.alerts { background: linear-gradient(135deg, #f39c12, #e67e22); }
+
+        .stat-card h4 {
+            font-size: 0.85rem;
+            opacity: 0.9;
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: bold;
+            position: relative;
+            z-index: 1;
+        }
+
+        .region-controls {
+            margin-bottom: 25px;
+        }
+
+        .region-controls h3 {
+            color: #4a5568;
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-tabs {
+            display: flex;
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 4px;
+            margin-bottom: 15px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #64748b;
+        }
+
+        .tab-btn.active {
+            background: #f44336;
+            color: white;
+            box-shadow: 0 2px 4px rgba(244, 67, 54, 0.3);
+        }
+
+        .region-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .region-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            background: #f8fafc;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            position: relative;
+        }
+
+        .region-item:hover {
+            background: #e2e8f0;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .region-item.active {
+            border-color: #f44336;
+            background: #fef2f2;
+        }
+
+        .region-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .region-name {
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 1rem;
+        }
+
+        .station-count {
+            background: #f44336;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+
+        .region-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 0.8rem;
+            color: #4a5568;
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+        }
+
+        .status-indicator.warning { background: #f59e0b; }
+        .status-indicator.error { background: #ef4444; }
+
+        /* Map Container */
+        .map-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+        }
+
+        .map-header {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .map-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .map-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .map-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .map-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        #map {
+            height: calc(100% - 60px);
+            width: 100%;
+        }
+
+        /* Custom Leaflet Styles */
+        .leaflet-control-zoom a {
+            background: #f44336 !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 8px !important;
+            margin: 2px !important;
+        }
+
+        .leaflet-popup-content-wrapper {
+            border-radius: 12px !important;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+        }
+
+        /* Legend */
+        .map-legend {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            min-width: 200px;
+        }
+
+        .legend-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2d3748;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+            font-size: 0.8rem;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr;
+            }
+            
+            .sidebar {
+                order: 2;
+            }
+            
+            .map-container {
+                order: 1;
+                height: 500px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .overview-stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .region-details {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-section">
+                <h1><i class="fas fa-leaf"></i> GreenGrid Maps</h1>
+            </div>
+            <nav class="nav-buttons">
+                <a href="map1-primary.html" class="nav-btn">Primary Location</a>
+                <a href="map2-monitoring.html" class="nav-btn">Monitoring Points</a>
+                <a href="#" class="nav-btn active">Regional Overview</a>
+                <a href="index.html" class="nav-btn">All Maps</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <h2><i class="fas fa-globe-asia"></i> Regional Dashboard</h2>
+            
+            <!-- Overview Stats -->
+            <div class="overview-stats">
+                <div class="stat-card total">
+                    <h4>Total Stations</h4>
+                    <div class="value">87</div>
+                </div>
+                <div class="stat-card regions">
+                    <h4>Active Regions</h4>
+                    <div class="value">5</div>
+                </div>
+                <div class="stat-card coverage">
+                    <h4>Coverage</h4>
+                    <div class="value">78%</div>
+                </div>
+                <div class="stat-card alerts">
+                    <h4>Active Alerts</h4>
+                    <div class="value">3</div>
+                </div>
+            </div>
+
+            <!-- Region Controls -->
+            <div class="region-controls">
+                <h3><i class="fas fa-map"></i> Regional View</h3>
+                
+                <div class="control-tabs">
+                    <button class="tab-btn active" data-view="all">All Regions</button>
+                    <button class="tab-btn" data-view="active">Active Only</button>
+                    <button class="tab-btn" data-view="alerts">With Alerts</button>
+                </div>
+
+                <div class="region-list" id="regionList">
+                    <!-- Regions will be populated by JavaScript -->
+                </div>
+            </div>
+        </aside>
+
+        <!-- Map Container -->
+        <main class="map-container">
+            <div class="map-header">
+                <div class="map-title">
+                    <i class="fas fa-flag"></i> Regional Overview - National Coverage
+                </div>
+                <div class="map-controls">
+                    <button class="map-btn" onclick="centerMap()">
+                        <i class="fas fa-crosshairs"></i> Center
+                    </button>
+                    <button class="map-btn" onclick="toggleHeatmap()">
+                        <i class="fas fa-fire"></i> Heatmap
+                    </button>
+                    <button class="map-btn" onclick="exportData()">
+                        <i class="fas fa-download"></i> Export
+                    </button>
+                    <button class="map-btn" onclick="toggleFullscreen()">
+                        <i class="fas fa-expand"></i> Full
+                    </button>
+                </div>
+            </div>
+            <div id="map"></div>
+            
+            <!-- Map Legend -->
+            <div class="map-legend">
+                <div class="legend-title">Station Status</div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #10b981;"></div>
+                    <span>Operational (70+)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #f59e0b;"></div>
+                    <span>Maintenance (10-15)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ef4444;"></div>
+                    <span>Critical (<5)</span>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <script>
+        // Map and data
+        let map;
+        let markers = {};
+        let regionCircles = {};
+        let heatmapVisible = false;
+
+        // Regional data
+        const regions = {
+            delhi: { 
+                lat: 28.6139, lng: 77.2090, name: "Delhi", 
+                stations: 15, status: "operational", coverage: "85%", 
+                alerts: 0, population: "32M", airQuality: "Moderate"
+            },
+            mumbai: { 
+                lat: 19.0760, lng: 72.8777, name: "Mumbai", 
+                stations: 22, status: "operational", coverage: "92%", 
+                alerts: 1, population: "21M", airQuality: "Good"
+            },
+            chennai: { 
+                lat: 13.0827, lng: 80.2707, name: "Chennai", 
+                stations: 18, status: "operational", coverage: "78%", 
+                alerts: 0, population: "11M", airQuality: "Good"
+            },
+            bangalore: { 
+                lat: 12.9716, lng: 77.5946, name: "Bangalore", 
+                stations: 20, status: "maintenance", coverage: "88%", 
+                alerts: 2, population: "13M", airQuality: "Moderate"
+            },
+            kolkata: { 
+                lat: 22.5726, lng: 88.3639, name: "Kolkata", 
+                stations: 12, status: "operational", coverage: "70%", 
+                alerts: 0, population: "15M", airQuality: "Poor"
+            }
+        };
+
+        // Status colors
+        const statusColors = {
+            operational: '#10b981',
+            maintenance: '#f59e0b',
+            critical: '#ef4444'
+        };
+
+        // Initialize map
+        function initMap() {
+            map = L.map('map').setView([20.5937, 78.9629], 5);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            addRegionalMarkers();
+            populateRegionList();
+            setupTabs();
+        }
+
+        // Add regional markers
+        function addRegionalMarkers() {
+            Object.keys(regions).forEach(key => {
+                const region = regions[key];
+                const color = statusColors[region.status] || statusColors.operational;
+                
+                const marker = L.marker([region.lat, region.lng], {
+                    icon: createRegionalIcon(color, region.stations)
+                }).addTo(map);
+                
+                const popupContent = `
+                    <div style="text-align: center; min-width: 200px;">
+                        <h3 style="margin: 0 0 10px 0; color: #2d3748;">${region.name} Region</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; text-align: left;">
+                            <div><strong>Stations:</strong> ${region.stations}</div>
+                            <div><strong>Coverage:</strong> ${region.coverage}</div>
+                            <div><strong>Population:</strong> ${region.population}</div>
+                            <div><strong>Air Quality:</strong> ${region.airQuality}</div>
+                            <div><strong>Status:</strong> <span style="color: ${color}; text-transform: capitalize;">${region.status}</span></div>
+                            <div><strong>Alerts:</strong> ${region.alerts}</div>
+                        </div>
+                    </div>
+                `;
+                
+                marker.bindPopup(popupContent);
+                markers[key] = marker;
+
+                // Add coverage circle
+                const circle = L.circle([region.lat, region.lng], {
+                    color: color,
+                    fillColor: color,
+                    fillOpacity: 0.1,
+                    radius: 150000
+                }).addTo(map);
+                
+                regionCircles[key] = circle;
+            });
+        }
+
+        // Create regional icon
+        function createRegionalIcon(color, stationCount) {
+            const size = Math.min(Math.max(stationCount * 2, 24), 40);
+            return L.divIcon({
+                className: 'custom-regional-icon',
+                html: `
+                    <div style="
+                        background: ${color};
+                        width: ${size}px;
+                        height: ${size}px;
+                        border-radius: 50%;
+                        border: 4px solid white;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        color: white;
+                        font-weight: bold;
+                        font-size: ${Math.max(size * 0.3, 10)}px;
+                    ">${stationCount}</div>
+                `,
+                iconSize: [size + 8, size + 8],
+                iconAnchor: [(size + 8) / 2, (size + 8) / 2]
+            });
+        }
+
+        // Populate region list
+        function populateRegionList() {
+            const regionList = document.getElementById('regionList');
+            regionList.innerHTML = '';
+            
+            Object.keys(regions).forEach(key => {
+                const region = regions[key];
+                const regionElement = document.createElement('div');
+                regionElement.className = 'region-item';
+                regionElement.dataset.regionId = key;
+                regionElement.dataset.status = region.status;
+                regionElement.dataset.alerts = region.alerts;
+                
+                const statusColor = statusColors[region.status];
+                
+                regionElement.innerHTML = `
+                    <div class="region-header">
+                        <div class="region-name">${region.name}</div>
+                        <div class="station-count">${region.stations}</div>
+                    </div>
+                    <div class="region-details">
+                        <div class="detail-item">
+                            <div class="status-indicator" style="background: ${statusColor};"></div>
+                            <span>${region.status}</span>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-chart-pie" style="color: #4a5568;"></i>
+                            <span>${region.coverage}</span>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-users" style="color: #4a5568;"></i>
+                            <span>${region.population}</span>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-exclamation-triangle" style="color: ${region.alerts > 0 ? '#f59e0b' : '#10b981'};"></i>
+                            <span>${region.alerts} alerts</span>
+                        </div>
+                    </div>
+                `;
+                
+                regionElement.addEventListener('click', () => focusOnRegion(key));
+                regionList.appendChild(regionElement);
+            });
+        }
+
+        // Setup tab functionality
+        function setupTabs() {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    const view = this.dataset.view;
+                    filterRegions(view);
+                });
+            });
+        }
+
+        // Filter regions based on view
+        function filterRegions(view) {
+            document.querySelectorAll('.region-item').forEach(item => {
+                const status = item.dataset.status;
+                const alerts = parseInt(item.dataset.alerts);
+                
+                let shouldShow = true;
+                
+                if (view === 'active') {
+                    shouldShow = status === 'operational';
+                } else if (view === 'alerts') {
+                    shouldShow = alerts > 0;
+                }
+                
+                item.style.display = shouldShow ? 'block' : 'none';
+            });
+        }
+
+        // Focus on specific region
+        function focusOnRegion(regionKey) {
+            const region = regions[regionKey];
+            map.setView([region.lat, region.lng], 7);
+            markers[regionKey].openPopup();
+            
+            // Highlight region item
+            document.querySelectorAll('.region-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector(`[data-region-id="${regionKey}"]`).classList.add('active');
+        }
+
+        // Map control functions
+        function centerMap() {
+            map.setView([20.5937, 78.9629], 5);
+        }
+
+        function toggleHeatmap() {
+            heatmapVisible = !heatmapVisible;
+            
+            if (heatmapVisible) {
+                // Hide circles, show heatmap effect
+                Object.values(regionCircles).forEach(circle => circle.setStyle({ fillOpacity: 0.3 }));
+            } else {
+                // Show normal circles
+                Object.values(regionCircles).forEach(circle => circle.setStyle({ fillOpacity: 0.1 }));
+            }
+        }
+
+        function exportData() {
+            // Simulate data export
+            const data = JSON.stringify(regions, null, 2);
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'greengrid-regional-data.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function toggleFullscreen() {
+            const mapContainer = document.querySelector('.map-container');
+            if (!document.fullscreenElement) {
+                mapContainer.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Initialize when DOM loads
+        document.addEventListener('DOMContentLoaded', initMap);
+    </script>
+</body>
+</html>
