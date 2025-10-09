@@ -1,0 +1,73 @@
+<!doctype html>
+<label class="gg-required" for="email" data-i18n="field.email">Email</label>
+<input id="email" type="email" name="email" autocomplete="email" required />
+</div>
+</div>
+
+
+<div class="gg-row">
+<div class="gg-col">
+<label for="phone" data-i18n="field.phone">Phone (optional)</label>
+<input id="phone" type="tel" name="phone" autocomplete="tel" />
+</div>
+<div class="gg-col">
+<label for="topic" data-i18n="field.topic">Topic</label>
+<select id="topic" name="topic">
+<option value="support" data-i18n="topic.support">Support</option>
+<option value="partnership" data-i18n="topic.partnership">Partnership</option>
+<option value="suggestion" data-i18n="topic.suggestion">Suggestion</option>
+<option value="media" data-i18n="topic.media">Media</option>
+</select>
+</div>
+</div>
+
+
+<div>
+<label class="gg-required" for="message" data-i18n="field.message">Your message</label>
+<textarea id="message" name="message" required></textarea>
+</div>
+
+
+<div class="gg-row">
+<div class="gg-col gg-inline">
+<input id="consent" type="checkbox" name="consent" required />
+<label class="gg-required" for="consent" data-i18n="field.consent">I agree to the processing of my data.</label>
+</div>
+</div>
+
+
+<div class="gg-actions">
+<button class="gg-btn primary" type="submit" data-i18n="action.send">Send message</button>
+<button class="gg-btn ghost" type="reset" data-i18n="action.clear">Clear</button>
+</div>
+
+
+<!-- Non-JS validation helper -->
+<p class="gg-meta" data-i18n="contact.privacy">We won’t share your details without permission.</p>
+</form>
+</div>
+</div>
+
+
+<aside class="gg-col">
+<div class="gg-card gg-grid" aria-labelledby="reach-us">
+<h2 id="reach-us" data-i18n="contact.reach.heading">Reach us directly</h2>
+<ul>
+<li><strong data-i18n="contact.email">Email:</strong> <a href="mailto:support@greengrid.lk">support@greengrid.lk</a></li>
+<li><strong data-i18n="contact.phone">Phone:</strong> <a href="tel:+94112345678">+94 11 234 5678</a></li>
+<li><strong data-i18n="contact.address">Address:</strong> 123 Green Lane, Colombo</li>
+<li><strong data-i18n="contact.hours">Hours:</strong> 9:00–17:00 LKT, Mon–Fri</li>
+</ul>
+
+</div>
+</aside>
+</section>
+
+
+</main>
+
+
+<!-- Optional site footer placeholder -->
+<footer class="gg-shell" data-slot="site-footer"></footer>
+</body>
+</html>

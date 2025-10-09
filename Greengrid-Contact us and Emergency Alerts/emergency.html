@@ -1,0 +1,70 @@
+<!doctype html>
+<div class="gg-col">
+<label class="gg-required" for="location" data-i18n="field.location">Location</label>
+<input id="location" name="location" placeholder="Address or landmark" required />
+<p class="gg-meta"><span data-i18n="field.or">or</span>
+<button type="button" class="gg-btn ghost" data-hook="use-geolocation" data-i18n="action.useMyLocation">Use my location</button>
+</p>
+</div>
+</div>
+
+
+<div class="gg-row">
+<div class="gg-col">
+<label for="truck" data-i18n="field.truck">Related truck / route (if known)</label>
+<input id="truck" name="truck" placeholder="e.g., Route R12, Truck #GG-204" />
+</div>
+</div>
+
+
+<fieldset class="gg-card" style="padding:12px;" aria-labelledby="identity-legend">
+<legend id="identity-legend" class="gg-meta" data-i18n="field.identity">Your details (optional)</legend>
+<div class="gg-row">
+<div class="gg-col">
+<label for="reporter_name" data-i18n="field.name">Name</label>
+<input id="reporter_name" name="reporter_name" autocomplete="name" />
+</div>
+<div class="gg-col">
+<label for="reporter_phone" data-i18n="field.phone">Phone</label>
+<input id="reporter_phone" type="tel" name="reporter_phone" autocomplete="tel" />
+</div>
+<div class="gg-col">
+<label for="reporter_email" data-i18n="field.email">Email</label>
+<input id="reporter_email" type="email" name="reporter_email" autocomplete="email" />
+</div>
+</div>
+<div class="gg-inline" style="margin-top:8px;">
+<input id="anon" type="checkbox" name="anonymous" />
+<label for="anon" data-i18n="field.anonymous">Submit anonymously</label>
+</div>
+<p class="gg-meta" data-i18n="em.identity.note">If you’re not signed in, your report won’t appear in your history, but authorities still receive it.</p>
+</fieldset>
+
+
+<div class="gg-actions">
+<button class="gg-btn primary" type="submit" data-i18n="action.submitReport">Submit report</button>
+<button class="gg-btn ghost" type="reset" data-i18n="action.clear">Clear</button>
+</div>
+
+
+<p class="gg-meta" data-i18n="em.privacy">We strip precise GPS from shared public views. Authorities receive exact coordinates when provided.</p>
+</form>
+</div>
+</div>
+
+
+<h3 data-i18n="em.tips.heading">Safety tips</h3>
+<ul class="gg-meta">
+<li data-i18n="em.tips.1">Stay at a safe distance from hazardous materials.</li>
+<li data-i18n="em.tips.2">If there’s immediate danger to life, call 1990/119 before submitting a report.</li>
+<li data-i18n="em.tips.3">Add a photo only if safe to do so.</li>
+</ul>
+</div>
+</aside>
+</section>
+</main>
+
+
+<footer class="gg-shell" data-slot="site-footer"></footer>
+</body>
+</html>
