@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Primary Location Map - GreenGrid</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            padding: 15px 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .logo-section h1 {
+            color: white;
+            font-size: 1.8rem;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .nav-btn {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .nav-btn.active {
+            background: #4caf50;
+            border-color: #4caf50;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+            height: calc(100vh - 80px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            color: #2d3748;
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #4caf50;
+        }
+
+        .control-section {
+            margin-bottom: 25px;
+        }
+
+        .control-section h3 {
+            color: #4a5568;
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .control-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            background: #f7fafc;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .control-item label {
+            font-size: 0.9rem;
+            color: #4a5568;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 40px;
+            height: 20px;
+            background: #cbd5e0;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle-switch.active {
+            background: #4caf50;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .toggle-switch.active::after {
+            transform: translateX(20px);
+        }
+
+        .stats-card {
+            background: linear-gradient(135deg, #4caf50, #45a049);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .stats-card h4 {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .stats-card .value {
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+
+        .station-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .station-item {
+            padding: 10px;
+            margin-bottom: 8px;
+            background: #f7fafc;
+            border-radius: 8px;
+            border-left: 4px solid #4caf50;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .station-item:hover {
+            background: #edf2f7;
+            transform: translateX(5px);
+        }
+
+        .station-name {
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 0.9rem;
+        }
+
+        .station-status {
+            font-size: 0.8rem;
+            color: #4caf50;
+            margin-top: 3px;
+        }
+
+        /* Map Container */
+        .map-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+        }
+
+        .map-header {
+            background: linear-gradient(135deg, #4caf50, #45a049);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .map-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .map-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .map-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .map-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        #map {
+            height: calc(100% - 60px);
+            width: 100%;
+        }
+
+        /* Custom Leaflet Styles */
+        .leaflet-control-zoom {
+            border: none !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+        }
+
+        .leaflet-control-zoom a {
+            background: #4caf50 !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 8px !important;
+            margin: 2px !important;
+        }
+
+        .leaflet-popup-content-wrapper {
+            background: linear-gradient(135deg, #4caf50, #45a049) !important;
+            color: white !important;
+            border-radius: 12px !important;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+        }
+
+        .leaflet-popup-tip {
+            background: #4caf50 !important;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr;
+            }
+            
+            .sidebar {
+                order: 2;
+            }
+            
+            .map-container {
+                order: 1;
+                height: 500px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .nav-buttons {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .container {
+                padding: 10px;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-section">
+                <h1><i class="fas fa-leaf"></i> GreenGrid Maps</h1>
+            </div>
+            <nav class="nav-buttons">
+                <a href="#" class="nav-btn active">Primary Location</a>
+                <a href="map2-monitoring.html" class="nav-btn">Monitoring Points</a>
+                <a href="map3-regional.html" class="nav-btn">Regional Overview</a>
+                <a href="index.html" class="nav-btn">All Maps</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <h2><i class="fas fa-cog"></i> Map Controls</h2>
+            
+            <!-- Stats Cards -->
+            <div class="stats-card">
+                <h4>Active Stations</h4>
+                <div class="value">3</div>
+            </div>
+            
+            <div class="stats-card" style="background: linear-gradient(135deg, #2196F3, #1976D2);">
+                <h4>Coverage Area</h4>
+                <div class="value">15km²</div>
+            </div>
+
+            <!-- Layer Controls -->
+            <div class="control-section">
+                <h3><i class="fas fa-layer-group"></i> Map Layers</h3>
+                <div class="control-group">
+                    <div class="control-item">
+                        <label><i class="fas fa-map"></i> Street View</label>
+                        <div class="toggle-switch active" data-layer="street"></div>
+                    </div>
+                    <div class="control-item">
+                        <label><i class="fas fa-satellite"></i> Satellite</label>
+                        <div class="toggle-switch" data-layer="satellite"></div>
+                    </div>
+                    <div class="control-item">
+                        <label><i class="fas fa-circle"></i> Coverage Areas</label>
+                        <div class="toggle-switch active" data-layer="coverage"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Station List -->
+            <div class="control-section">
+                <h3><i class="fas fa-broadcast-tower"></i> Stations</h3>
+                <div class="station-list">
+                    <div class="station-item" data-station="hq">
+                        <div class="station-name">GreenGrid HQ</div>
+                        <div class="station-status">● Online - 24/7</div>
+                    </div>
+                    <div class="station-item" data-station="datacenter">
+                        <div class="station-name">Data Center</div>
+                        <div class="station-status">● Online - Monitoring</div>
+                    </div>
+                    <div class="station-item" data-station="greenzone">
+                        <div class="station-name">Green Zone</div>
+                        <div class="station-status">● Online - Air Quality</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Map Container -->
+        <main class="map-container">
+            <div class="map-header">
+                <div class="map-title">
+                    <i class="fas fa-map-marker-alt"></i> Primary Location - Delhi Region
+                </div>
+                <div class="map-controls">
+                    <button class="map-btn" onclick="centerMap()">
+                        <i class="fas fa-crosshairs"></i> Center
+                    </button>
+                    <button class="map-btn" onclick="toggleFullscreen()">
+                        <i class="fas fa-expand"></i> Fullscreen
+                    </button>
+                </div>
+            </div>
+            <div id="map"></div>
+        </main>
+    </div>
+
+    <!-- Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <script>
+        // Map initialization
+        let map;
+        let markers = {};
+        let coverageCircles = {};
+        let currentLayer = 'street';
+
+        // Station data
+        const stations = {
+            hq: { lat: 28.6139, lng: 77.2090, name: "GreenGrid HQ", description: "🏢 Main Office Location<br>📊 Central Monitoring Hub" },
+            datacenter: { lat: 28.6329, lng: 77.2197, name: "Data Center", description: "💻 Data Processing Center<br>🔍 Environmental Analytics" },
+            greenzone: { lat: 28.5935, lng: 77.2074, name: "Green Zone", description: "🌱 Air Quality Station<br>🌬️ Pollution Monitoring" }
+        };
+
+        // Initialize map
+        function initMap() {
+            map = L.map('map').setView([28.6139, 77.2090], 12);
+            
+            // Add tile layer
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            // Add markers
+            addMarkers();
+            
+            // Add coverage areas
+            addCoverageAreas();
+        }
+
+        // Add markers to map
+        function addMarkers() {
+            Object.keys(stations).forEach(key => {
+                const station = stations[key];
+                const marker = L.marker([station.lat, station.lng], {
+                    icon: createCustomIcon('#4caf50')
+                }).addTo(map);
+                
+                marker.bindPopup(`<b>${station.name}</b><br>${station.description}`);
+                markers[key] = marker;
+            });
+        }
+
+        // Create custom icon
+        function createCustomIcon(color) {
+            return L.divIcon({
+                className: 'custom-div-icon',
+                html: `<div style="background-color:${color};width:20px;height:20px;border-radius:50%;border:3px solid white;box-shadow:0 3px 8px rgba(0,0,0,0.3);"></div>`,
+                iconSize: [26, 26],
+                iconAnchor: [13, 13]
+            });
+        }
+
+        // Add coverage areas
+        function addCoverageAreas() {
+            Object.keys(stations).forEach(key => {
+                const station = stations[key];
+                const circle = L.circle([station.lat, station.lng], {
+                    color: '#4caf50',
+                    fillColor: '#4caf50',
+                    fillOpacity: 0.15,
+                    radius: 2000
+                }).addTo(map);
+                
+                coverageCircles[key] = circle;
+            });
+        }
+
+        // Toggle switches functionality
+        document.querySelectorAll('.toggle-switch').forEach(toggle => {
+            toggle.addEventListener('click', function() {
+                this.classList.toggle('active');
+                
+                const layer = this.dataset.layer;
+                
+                if (layer === 'satellite') {
+                    // Toggle satellite view (would need satellite tiles)
+                    console.log('Satellite toggle');
+                } else if (layer === 'coverage') {
+                    // Toggle coverage areas
+                    Object.values(coverageCircles).forEach(circle => {
+                        if (this.classList.contains('active')) {
+                            circle.addTo(map);
+                        } else {
+                            map.removeLayer(circle);
+                        }
+                    });
+                }
+            });
+        });
+
+        // Station item clicks
+        document.querySelectorAll('.station-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const stationKey = this.dataset.station;
+                const station = stations[stationKey];
+                
+                // Pan to station and open popup
+                map.setView([station.lat, station.lng], 15);
+                markers[stationKey].openPopup();
+                
+                // Highlight station item
+                document.querySelectorAll('.station-item').forEach(i => i.style.background = '#f7fafc');
+                this.style.background = '#e6fffa';
+            });
+        });
+
+        // Map control functions
+        function centerMap() {
+            map.setView([28.6139, 77.2090], 12);
+        }
+
+        function toggleFullscreen() {
+            const mapContainer = document.querySelector('.map-container');
+            if (!document.fullscreenElement) {
+                mapContainer.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Initialize when DOM loads
+        document.addEventListener('DOMContentLoaded', initMap);
+    </script>
+</body>
+</html>

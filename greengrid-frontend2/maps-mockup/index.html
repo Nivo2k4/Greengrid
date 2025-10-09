@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GreenGrid Maps Mockup</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>GreenGrid Live Maps Mockup</h1>
+            <p>Interactive maps for environmental monitoring</p>
+        </header>
+        
+        <main>
+            <!-- Main Map Section -->
+            <section class="map-section">
+                <h2>Primary Location Map</h2>
+                <div id="main-map" class="map-container"></div>
+            </section>
+            
+            <!-- Secondary Map Section -->
+            <section class="map-section">
+                <h2>Environmental Monitoring Points</h2>
+                <div id="monitoring-map" class="map-container"></div>
+            </section>
+            
+            <!-- Third Map Section -->
+            <section class="map-section">
+                <h2>Regional Overview</h2>
+                <div id="regional-map" class="map-container"></div>
+            </section>
+        </main>
+    </div>
+    
+    <!-- Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <!-- Custom JavaScript -->
+    <script src="maps.js"></script>
+</body>
+</html>

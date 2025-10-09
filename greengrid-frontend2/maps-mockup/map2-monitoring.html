@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Environmental Monitoring - GreenGrid</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            padding: 15px 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .logo-section h1 {
+            color: white;
+            font-size: 1.8rem;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .nav-btn {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .nav-btn.active {
+            background: #2196F3;
+            border-color: #2196F3;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 20px;
+            height: calc(100vh - 80px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            color: #2d3748;
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #2196F3;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stats-card {
+            padding: 12px;
+            border-radius: 8px;
+            color: white;
+            text-align: center;
+        }
+
+        .stats-card.temp { background: linear-gradient(135deg, #ff6b6b, #ee5a24); }
+        .stats-card.air { background: linear-gradient(135deg, #4ecdc4, #44a08d); }
+        .stats-card.water { background: linear-gradient(135deg, #45b7d1, #096dd9); }
+        .stats-card.solar { background: linear-gradient(135deg, #f9ca24, #f0932b); }
+
+        .stats-card h4 {
+            font-size: 0.8rem;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .stats-card .value {
+            font-size: 1.4rem;
+            font-weight: bold;
+        }
+
+        .sensor-filters {
+            margin-bottom: 20px;
+        }
+
+        .sensor-filters h3 {
+            color: #4a5568;
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .filter-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f1f5f9;
+            color: #64748b;
+        }
+
+        .filter-btn.active {
+            background: #2196F3;
+            color: white;
+        }
+
+        .filter-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .sensor-list {
+            max-height: 350px;
+            overflow-y: auto;
+        }
+
+        .sensor-item {
+            padding: 12px;
+            margin-bottom: 8px;
+            background: #f7fafc;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+
+        .sensor-item:hover {
+            background: #edf2f7;
+            transform: translateX(5px);
+        }
+
+        .sensor-item.temp { border-left-color: #ff6b6b; }
+        .sensor-item.air { border-left-color: #4ecdc4; }
+        .sensor-item.water { border-left-color: #45b7d1; }
+        .sensor-item.pollution { border-left-color: #ffa726; }
+        .sensor-item.solar { border-left-color: #f9ca24; }
+
+        .sensor-name {
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 0.9rem;
+        }
+
+        .sensor-reading {
+            font-size: 0.8rem;
+            color: #4a5568;
+            margin-top: 3px;
+        }
+
+        .sensor-status {
+            font-size: 0.75rem;
+            margin-top: 3px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4caf50;
+        }
+
+        /* Map Container */
+        .map-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+        }
+
+        .map-header {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .map-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .map-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .map-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .map-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        #map {
+            height: calc(100% - 60px);
+            width: 100%;
+        }
+
+        /* Custom Leaflet Styles */
+        .leaflet-control-zoom a {
+            background: #2196F3 !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 8px !important;
+            margin: 2px !important;
+        }
+
+        .leaflet-popup-content-wrapper {
+            border-radius: 12px !important;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+        }
+
+        /* Real-time indicator */
+        .realtime-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(76, 175, 80, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .pulse {
+            width: 8px;
+            height: 8px;
+            background: #fff;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr;
+            }
+            
+            .sidebar {
+                order: 2;
+            }
+            
+            .map-container {
+                order: 1;
+                height: 500px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .nav-buttons {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-section">
+                <h1><i class="fas fa-leaf"></i> GreenGrid Maps</h1>
+            </div>
+            <nav class="nav-buttons">
+                <a href="map1-primary.html" class="nav-btn">Primary Location</a>
+                <a href="#" class="nav-btn active">Monitoring Points</a>
+                <a href="map3-regional.html" class="nav-btn">Regional Overview</a>
+                <a href="index.html" class="nav-btn">All Maps</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <h2><i class="fas fa-chart-line"></i> Monitoring Dashboard</h2>
+            
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stats-card temp">
+                    <h4>Temperature</h4>
+                    <div class="value">28°C</div>
+                </div>
+                <div class="stats-card air">
+                    <h4>Air Quality</h4>
+                    <div class="value">Good</div>
+                </div>
+                <div class="stats-card water">
+                    <h4>Water Quality</h4>
+                    <div class="value">95%</div>
+                </div>
+                <div class="stats-card solar">
+                    <h4>Solar Power</h4>
+                    <div class="value">2.1kW</div>
+                </div>
+            </div>
+
+            <!-- Sensor Filters -->
+            <div class="sensor-filters">
+                <h3><i class="fas fa-filter"></i> Sensor Types</h3>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-type="all">All</button>
+                    <button class="filter-btn" data-type="temp">Temperature</button>
+                    <button class="filter-btn" data-type="air">Air Quality</button>
+                    <button class="filter-btn" data-type="water">Water</button>
+                    <button class="filter-btn" data-type="pollution">Pollution</button>
+                    <button class="filter-btn" data-type="solar">Solar</button>
+                </div>
+            </div>
+
+            <!-- Sensor List -->
+            <div class="sensor-list" id="sensorList">
+                <!-- Sensors will be populated by JavaScript -->
+            </div>
+        </aside>
+
+        <!-- Map Container -->
+        <main class="map-container">
+            <div class="realtime-indicator">
+                <div class="pulse"></div>
+                Live Data
+            </div>
+            <div class="map-header">
+                <div class="map-title">
+                    <i class="fas fa-broadcast-tower"></i> Environmental Monitoring - Mumbai Region
+                </div>
+                <div class="map-controls">
+                    <button class="map-btn" onclick="centerMap()">
+                        <i class="fas fa-crosshairs"></i> Center
+                    </button>
+                    <button class="map-btn" onclick="refreshData()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                    <button class="map-btn" onclick="toggleFullscreen()">
+                        <i class="fas fa-expand"></i> Full
+                    </button>
+                </div>
+            </div>
+            <div id="map"></div>
+        </main>
+    </div>
+
+    <!-- Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <script>
+        // Map and markers
+        let map;
+        let markers = {};
+        let coverageCircles = {};
+
+        // Sensor data
+        const sensors = {
+            temp1: { lat: 19.0760, lng: 72.8777, type: 'temp', name: "Temperature Station", location: "Marine Drive", reading: "28°C", status: "Normal" },
+            air1: { lat: 19.0544, lng: 72.8324, type: 'air', name: "Air Quality Monitor", location: "Bandra West", reading: "AQI: 85", status: "Good" },
+            water1: { lat: 19.1136, lng: 72.8697, type: 'water', name: "Water Quality Sensor", location: "Juhu Beach", reading: "pH: 7.2", status: "Clean" },
+            pollution1: { lat: 19.0330, lng: 72.8569, type: 'pollution', name: "Pollution Monitor", location: "Worli", reading: "PM2.5: 45", status: "Moderate" },
+            solar1: { lat: 19.0970, lng: 72.8570, type: 'solar', name: "Solar Panel Station", location: "Andheri", reading: "2.1kW", status: "Optimal" }
+        };
+
+        // Color mapping for sensor types
+        const sensorColors = {
+            temp: '#ff6b6b',
+            air: '#4ecdc4',
+            water: '#45b7d1',
+            pollution: '#ffa726',
+            solar: '#f9ca24'
+        };
+
+        // Initialize map
+        function initMap() {
+            map = L.map('map').setView([19.0760, 72.8777], 11);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            addSensors();
+            populateSensorList();
+            setupFilters();
+        }
+
+        // Add sensor markers
+        function addSensors() {
+            Object.keys(sensors).forEach(key => {
+                const sensor = sensors[key];
+                const color = sensorColors[sensor.type];
+                
+                const marker = L.marker([sensor.lat, sensor.lng], {
+                    icon: createSensorIcon(color)
+                }).addTo(map);
+                
+                const popupContent = `
+                    <div style="text-align: center; color: white; background: linear-gradient(135deg, ${color}, ${adjustBrightness(color, -20)}); padding: 10px; border-radius: 8px; margin: -10px;">
+                        <h4 style="margin: 0 0 5px 0;">${sensor.name}</h4>
+                        <p style="margin: 0; opacity: 0.9;">${sensor.location}</p>
+                        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.3);">
+                            <strong>${sensor.reading}</strong><br>
+                            <small>Status: ${sensor.status}</small>
+                        </div>
+                    </div>
+                `;
+                
+                marker.bindPopup(popupContent);
+                markers[key] = marker;
+
+                // Add coverage circle
+                const circle = L.circle([sensor.lat, sensor.lng], {
+                    color: color,
+                    fillColor: color,
+                    fillOpacity: 0.1,
+                    radius: 1500
+                }).addTo(map);
+                
+                coverageCircles[key] = circle;
+            });
+        }
+
+        // Create sensor icon
+        function createSensorIcon(color) {
+            return L.divIcon({
+                className: 'custom-sensor-icon',
+                html: `<div style="background-color:${color};width:18px;height:18px;border-radius:50%;border:3px solid white;box-shadow:0 3px 8px rgba(0,0,0,0.3);position:relative;"><div style="width:8px;height:8px;background:white;border-radius:50%;position:absolute;top:2px;left:2px;"></div></div>`,
+                iconSize: [24, 24],
+                iconAnchor: [12, 12]
+            });
+        }
+
+        // Populate sensor list
+        function populateSensorList() {
+            const sensorList = document.getElementById('sensorList');
+            sensorList.innerHTML = '';
+            
+            Object.keys(sensors).forEach(key => {
+                const sensor = sensors[key];
+                const sensorElement = document.createElement('div');
+                sensorElement.className = `sensor-item ${sensor.type}`;
+                sensorElement.dataset.sensorId = key;
+                sensorElement.dataset.type = sensor.type;
+                
+                sensorElement.innerHTML = `
+                    <div class="sensor-name">${sensor.name}</div>
+                    <div class="sensor-reading">${sensor.reading}</div>
+                    <div class="sensor-status">
+                        <div class="status-dot"></div>
+                        ${sensor.status} - ${sensor.location}
+                    </div>
+                `;
+                
+                sensorElement.addEventListener('click', () => focusOnSensor(key));
+                sensorList.appendChild(sensorElement);
+            });
+        }
+
+        // Setup filter buttons
+        function setupFilters() {
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    const filterType = this.dataset.type;
+                    filterSensors(filterType);
+                });
+            });
+        }
+
+        // Filter sensors
+        function filterSensors(type) {
+            document.querySelectorAll('.sensor-item').forEach(item => {
+                if (type === 'all' || item.dataset.type === type) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            // Show/hide markers
+            Object.keys(sensors).forEach(key => {
+                const sensor = sensors[key];
+                if (type === 'all' || sensor.type === type) {
+                    markers[key].addTo(map);
+                    coverageCircles[key].addTo(map);
+                } else {
+                    map.removeLayer(markers[key]);
+                    map.removeLayer(coverageCircles[key]);
+                }
+            });
+        }
+
+        // Focus on specific sensor
+        function focusOnSensor(sensorKey) {
+            const sensor = sensors[sensorKey];
+            map.setView([sensor.lat, sensor.lng], 14);
+            markers[sensorKey].openPopup();
+            
+            // Highlight sensor item
+            document.querySelectorAll('.sensor-item').forEach(item => {
+                item.style.background = '#f7fafc';
+            });
+            document.querySelector(`[data-sensor-id="${sensorKey}"]`).style.background = '#e3f2fd';
+        }
+
+        // Map control functions
+        function centerMap() {
+            map.setView([19.0760, 72.8777], 11);
+        }
+
+        function refreshData() {
+            // Simulate data refresh
+            console.log('Refreshing sensor data...');
+            // Add refresh animation or actual data update logic here
+        }
+
+        function toggleFullscreen() {
+            const mapContainer = document.querySelector('.map-container');
+            if (!document.fullscreenElement) {
+                mapContainer.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Helper function to adjust color brightness
+        function adjustBrightness(hex, percent) {
+            const num = parseInt(hex.replace('#', ''), 16);
+            const amt = Math.round(2.55 * percent);
+            const R = (num >> 16) + amt;
+            const G = (num >> 8 & 0x00FF) + amt;
+            const B = (num & 0x0000FF) + amt;
+            return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+                (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+                (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
+        }
+
+        // Simulate real-time updates
+        setInterval(() => {
+            // Update some random readings (for demo)
+            const tempSensor = sensors.temp1;
+            const newTemp = (26 + Math.random() * 4).toFixed(1);
+            tempSensor.reading = `${newTemp}°C`;
+            
+            // Update UI if needed
+            populateSensorList();
+        }, 30000); // Update every 30 seconds
+
+        // Initialize when DOM loads
+        document.addEventListener('DOMContentLoaded', initMap);
+    </script>
+</body>
+</html>
