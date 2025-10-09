@@ -1,22 +1,27 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-import { Route, Routes } from 'react-router-dom'
-import LandingPage from './pages/landing'
-import Login from './features/auth/login'
-import Register from './features/auth/registerpage'
+import { useRoutes } from "react-router-dom";
+import LandingPage from "./pages/landing";
+import Login from "./features/auth/login";
+import Register from "./features/auth/registerpage";
+import MainLayout from "./layouts/main-layout";
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const routes = useRoutes([
+    {
+      path: "/",
+      element: <MainLayout />,
+      children: [
+        { index: true, element: <LandingPage /> },
+      ],
+    },
+    {
+      path: "/login",
+      element: <Login />,
+    },
+    {
+      path: "/register",
+      element: <Register />,
+    },
+  ]);
 
-  return (
-    <Routes>
-      <Route path='/' element={<LandingPage/>}/>
-      <Route path='/login' element={<Login/>}/>
-      <Route path='/register' element={<Register/>}/>
-  </Routes>
-  )
+  return routes;
 }
-
-export default App

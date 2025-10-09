@@ -8,10 +8,8 @@ import Navbar from "@/components/shared/navbar";
 export default function LandingPage(){
    
     return(<> 
-    <Navbar/>
     <HeroSection/>
     <FeatureCards/>
-    <Footer/>
     </>)
     
     
