@@ -13,81 +13,25 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Report {
+model Feedback {
   id            String   @id @default(uuid())
-  title         String
-  type          ReportType @default(general)
-  description   String?
-  location      String
-  priority      Priority @default(medium)
-  status        Status   @default(open)
-  images        Json?    // Array of image objects
-  contactInfo   Json?    // Contact information object
-  isEmergency   Boolean  @default(false)
-  
-  // Admin fields
-  adminNotes    String?
-  responseTeam  String?
-  resolvedAt    DateTime?
-  
-  // Relations
-  reportedById  String
-  reportedBy    User     @relation(fields: [reportedById], references: [id])
-  updatedById   String?
-  updatedBy     User?    @relation("ReportUpdater", fields: [updatedById], references: [id])
-  
-  // Timestamps
+  email         String
+  name          String
+  description   String? @default("")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-}
-
-enum ReportType {
-  general
-  emergency
-  feedback
-  complaint
-  hazardous_waste
-  illegal_dumping
-  maintenance
-}
-
-enum Priority {
-  low
-  medium
-  high
-  critical
-}
-
-enum Status {
-  open
-  in_progress
-  resolved
-  closed
 }
 
 
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
-  passwordHash String
+  password     String
   fullName     String?
-  avatarUrl    String?
-  role         Role     @default(resident)
-  phoneNumber  String?
-  address      String?
-  isActive     Boolean  @default(true)
-  joinedAt     DateTime @default(now())
-  lastLogin    DateTime?
+  nic          String    @unique
   createdAt    DateTime @default(now())
   updatedAt    DateTime @default(now()) @updatedAt
   
-  // Relations
-  reports           Report[]
-  updatedReports    Report[] @relation("ReportUpdater")
 }
 
-enum Role {
-  admin
-  community_leader
-  resident
-}
+//Restructured schema structure

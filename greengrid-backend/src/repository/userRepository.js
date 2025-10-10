@@ -1,24 +1,15 @@
-import { PrismaClient } from "@prisma/client";
-import AppError from "../exceptions/appError.js";
-
-const prisma = new PrismaClient();
-
+import { prisma } from '../server.js';
 class UserRepository {
-  async createUser(user) {
-    try {
-      return await prisma.user.create({ data: user });
-    } catch (error) {
-      throw new AppError(400, error.message);
+    async FindByEmail(email) {
+        return await prisma.user.findUnique({
+            where: { email: email }
+        });
     }
-  }
-
-  async getUsers() {
-    try {
-      return await prisma.user.findMany();
-    } catch (error) {
-      throw new AppError(400, error.message);
+    async createUser(user) {
+        return await prisma.user.create({
+            data: user
+        });
     }
-  }
 }
 
 export default new UserRepository();
