@@ -9,11 +9,12 @@ import { Eye, EyeOff, Lock, Mail,Leaf,User,IdCard } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { registerUser } from "@/services/authService";
 
 export default function Register(){
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-        const [isLoading,setLoading]= useState(false);  
+    const [isLoading]= useState(false);  
     const [formData, setFormData] = useState({
         fullName: '',
         email: '',
@@ -24,7 +25,7 @@ export default function Register(){
         agreeToTerms: false
     });
     const [error, setError] = useState('');
-    const navigate= useNavigate
+    const navigate= useNavigate();
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value, type, checked } = e.target;
@@ -38,14 +39,27 @@ export default function Register(){
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
-        
+
         if (formData.password !== formData.confirmPassword) {
-        setError('Passwords do not match!');
-        return;
-        }      
+          setError('Passwords do not match!');
+          return;
+        } 
+        try {
+          const userDetails = {
+          fullName: formData.fullName,
+          nic: formData.nic,
+          email: formData.email,
+          password: formData.password
+        }
+          await registerUser(userDetails); 
+          navigate('/login');           
+        } catch (error) {
+            
+        }
+        
     };
         
-        return( 
+    return( 
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-green-950 dark:via-emerald-950 dark:to-teal-950 flex items-center justify-center p-4 w-screen">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-5">

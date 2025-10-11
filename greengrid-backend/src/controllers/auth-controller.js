@@ -4,7 +4,7 @@ import authService from '../services/authService.js';
 
 
 export const register = async (req, res,next) => {
-    
+    console.log(req.body);    
     try {
         const {error} = userRegistrationSchema.validate(req.body);  
         if (error)  throw new ApiError(400, error.details[0].message);
