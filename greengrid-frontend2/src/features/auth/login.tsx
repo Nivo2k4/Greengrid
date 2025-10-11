@@ -6,8 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Lock, Mail,Leaf } from "lucide-react";
-import { Link, Navigate } from "react-router-dom";
+import { Link} from "react-router-dom";
 import React, { useState } from "react";
+import { login, useAuth } from "@/services/authService.ts";
+import { useNavigate } from "react-router-dom";
+
 
 export default function Login(){
         const [showPassword, setShowPassword] = useState(false);
@@ -18,9 +21,17 @@ export default function Login(){
         });
         
         const [error, setError] = useState("");
-        
+        const navigate = useNavigate();
+        const {setAccessToken} = useAuth();
         const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        try {
+            const { accessToken } = await login(formData);
+            setAccessToken(accessToken);
+            navigate('/dashboard');
+        } catch (err: any) {
+            alert(err.message || 'Login failed');
+        }
          };
 
         const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

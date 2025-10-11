@@ -4,7 +4,8 @@ import express from 'express';
 import indexRoutes from './routes/index-routes.js';
 import { errorHandler } from './middleware/error-middleware.js';
 import cors from 'cors';
-
+import passport from 'passport';
+import './config/passport.js';
 
 const app = express();
 
@@ -14,6 +15,7 @@ app.use(cors({
     methods: ['GET','POST','PUT','DELETE','OPTIONS'],
     credentials: true,
 }))
+app.use(passport.initialize());
 // Use index routes
 app.use('/api', indexRoutes);
 app.use((_req, res) => {
